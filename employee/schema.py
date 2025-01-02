@@ -21,6 +21,8 @@ class EmployeeCreation(Schema):
     phone: str
     password:str
     employee_code: str
+    organization:str
+    role:str ='employee'
     profile: Optional[str] = None  
     reporting_manager: Optional[str] = None
     business_unit: Optional[str] = None

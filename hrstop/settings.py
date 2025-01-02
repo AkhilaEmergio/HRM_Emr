@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'ninja_jwt',
     'employee',
+    'organization',
 ]
 
 MIDDLEWARE = [
@@ -54,6 +55,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'employee.middleware.OrganizationMiddleware',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
