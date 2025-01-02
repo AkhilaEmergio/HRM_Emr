@@ -24,33 +24,6 @@ class Command(BaseCommand):
                 email=email,
                 password=password,
             )
-
-            # Assign additional fields for UserProfile
-            user.name = 'Admin User'  # You can set default values for the profile here
-            user.phone = '8606940413'
-            user.employee_code = 'EMP001'
-            user.reporting_manager = 'None'
-            user.business_unit = 'HR'
-            user.department = 'Admin'
-            user.designation = 'Administrator'
-            user.date_of_joining = '2024-12-25'
-            user.employment_type = 'Full-time'
-            user.service_status = 'Active'
-            user.workmode = 'Office'
-            user.probation = 'No'
-            user.extension = 'No'
-            user.notice_period = 'None'
-            user.enrollment_no = '12345'
-            user.trigger_onboarding = False
-            user.send_mail = True
-            user.weekly_offs = ["Saturday", "Sunday"]
-            user.total_hr_spend = 0.0
-            user.active_from = None
-            user.inactive_from = None
-            user.deactivate = False
-            user.deactivated_on = None
-
-            # Save the profile fields
             user.save()
 
             self.stdout.write(self.style.SUCCESS(f'Superuser created successfully with username {username}'))
