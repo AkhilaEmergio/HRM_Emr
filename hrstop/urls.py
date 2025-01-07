@@ -6,10 +6,15 @@ from ninja import NinjaAPI
 from .utils.auth import *
 from employee.views import *
 from organization.views import *
+from user.views import *
+from settings.views import *
 
 api = NinjaAPI(auth=AsyncJWTAuth())
-api.add_router('employee', user_api)
+api.add_router('employee', employee_api)
 api.add_router('organization', org_api)
+api.add_router('user', user_api)
+api.add_router('settings', setting_api)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
