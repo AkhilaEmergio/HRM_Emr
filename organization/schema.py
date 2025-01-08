@@ -6,6 +6,8 @@ class OrganizationSchema(Schema):
     name: str
     domain: str
     logo: Optional[str] = None  # Optional
+    address:Dict[str,str]
+    date:datetime
 
 class Message(Schema):
     message: str

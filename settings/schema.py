@@ -44,17 +44,25 @@ class DesignationInputSchema(Schema):
     description: Optional[str] = None
     rank: Optional[str] = None
 
-
 class DesignationSchema(Schema):
     title: str
     description: Optional[str] = None
     rank: Optional[str] = None
-    updated:Optional[EmployeeCreation]=None
+    updated:Optional[EmployeeCreation]
+
+class BandInputschema(Schema):
+    title: str
+    rank: Optional[str] = None
 
 class Bandschema(Schema):
     title: str
     rank: Optional[str] = None
     updated_by: EmployeeCreation
+
+class BusinessUnitInputSchema(Schema):
+    title: str
+    description: Optional[str] = None
+    unit_head: Optional[str]=None
 
 class BusinessUnitSchema(Schema):
     title: str
@@ -62,5 +70,19 @@ class BusinessUnitSchema(Schema):
     unit_head: Optional[EmployeeCreation] = None
     updated_by: Optional[EmployeeCreation]
 
+class BillingInfoInputSchema(Schema):
+    name:str
+    Address:Dict[str,str]
+    GSTIN:Optional[str]
+    PAN:Optional[str]
+    country:Optional[str]
+
+class BillingInfoSchema(Schema):
+    name:str
+    Address:Dict[str,str]
+    GSTIN:Optional[str]
+    PAN:Optional[str]
+    country:Optional[str]
+    updated_by:EmployeeCreation
 
 

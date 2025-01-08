@@ -5,6 +5,8 @@ class Organization(models.Model):
     name = models.CharField(max_length=255)
     domain = models.CharField(max_length=255, unique=True) 
     logo=models.FileField(upload_to='logos/',null=True,blank=True)
+    address=models.JSONField()
+    created_at=models.DateTimeField(auto_now_add=True)
 
 class UserProfile(AbstractUser):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)

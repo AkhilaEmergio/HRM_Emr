@@ -50,7 +50,7 @@ async def get_employee(request, employee_id: int):
             raise HttpError(404, "Employee not found in this organization.")
     raise HttpError(400, "You do not have permission to view employee details in this organization.")
 
-@user_api.put("/update_employee/{employee_id}", response={200: EmployeeCreation, 404: Message})
+@employee_api.put("/update_employee/{employee_id}", response={200: EmployeeCreation, 404: Message})
 async def update_employee(request, employee_id: int, data: EmployeeCreation):
     user = request.user
     if user.role=='admin' and user.organization:

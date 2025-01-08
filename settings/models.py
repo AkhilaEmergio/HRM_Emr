@@ -28,3 +28,12 @@ class BusinessUnit(models.Model):
     description = models.CharField(max_length=100, null=True)
     unit_head = models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True,related_name="business_units_headed")
     updated_by = models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True,related_name="business_units_updated")
+
+
+class BillingDetails(models.Model):
+    name=models.CharField(max_length=100)
+    Address=models.JSONField()
+    GSTIN=models.CharField(max_length=100,null=True)
+    PAN=models.CharField(max_length=100,null=True)
+    country=models.CharField(max_length=100,null=True)
+    updated_by=models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
