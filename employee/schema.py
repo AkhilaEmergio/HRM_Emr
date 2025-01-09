@@ -15,14 +15,7 @@ class EmployeeLogin(Schema):
     password: str
     
 class EmployeeCreation(Schema):
-    username: str
-    email: str
-    name: str
-    phone: str
-    password:str
     employee_code: str
-    organization:str
-    role:str ='employee'
     profile: Optional[str] = None  
     reporting_manager: Optional[str] = None
     business_unit: Optional[str] = None

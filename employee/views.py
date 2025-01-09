@@ -14,7 +14,7 @@ from ninja_jwt.tokens import RefreshToken, AccessToken
 from ninja_jwt.tokens import RefreshToken
 from ninja.errors import HttpError
 
-user_api = Router(tags=['employee'])
+employee_api = Router(tags=['employee'])
 User = get_user_model()
 
 # @user_api.post("/userprofile", auth=None, response={201: TokenSchema, 409: Message})
@@ -27,28 +27,7 @@ User = get_user_model()
 #         return 201, {'access': str(refresh.access_token), 'refresh': str(refresh)}
 #     return 409, {"message": "User already exists"}
 
-@user_api.post("/login", auth=None, response={200: TokenSchema, 401: Message})
-async def login(request, data: EmployeeLogin):
-    user = await sync_to_async(authenticate)(username=data.username, password=data.password)
-    if not user:
-        return 401, {"message": "Invalid credentials"}
-    refresh = RefreshToken.for_user(user)
-    return 200, {'access': str(refresh.access_token), 'refresh': str(refresh)}
-
-@user_api.post("/refresh", auth=None, response={200: TokenSchema, 401: Message})
-def refresh_token(request, token_data: TokenRefreshSchema):
-    try:
-        refresh = RefreshToken(token_data.refresh)   
-        return 200, {'access': str(refresh.access_token),'refresh': str(refresh)}
-    except Exception: 
-        return 401, {"message": "Invalid refresh token"}
-
-@user_api.get("/", response={200: UserData, 401: Message})
-async def user(request):
-    user = request.user
-    return 200, user
-
-@user_api.post("/create_employee", response={201: EmployeeCreation, 400: Message})
+@employee_api.post("/create_employee", response={201: EmployeeCreation, 400: Message})
 async def create_employee(request, data: EmployeeCreation):
     user = request.user
     if user.role=='admin' and user.organization:
@@ -60,7 +39,7 @@ async def create_employee(request, data: EmployeeCreation):
         raise HttpError(400, "Employee with given username or email already exists in this organization.")
     raise HttpError(400, "You do not have permission to create employees in this organization.")
 
-@user_api.get("/get_employee/{employee_id}", response={200: EmployeeCreation, 404: Message})
+@employee_api.get("/get_employee/{employee_id}", response={200: EmployeeCreation, 404: Message})
 async def get_employee(request, employee_id: int):
     user = request.user
     if user.role=='admin' and user.organization:
@@ -71,7 +50,7 @@ async def get_employee(request, employee_id: int):
             raise HttpError(404, "Employee not found in this organization.")
     raise HttpError(400, "You do not have permission to view employee details in this organization.")
 
-@user_api.put("/update_employee/{employee_id}", response={200: EmployeeCreation, 404: Message})
+@employee_api.put("/update_employee/{employee_id}", response={200: EmployeeCreation, 404: Message})
 async def update_employee(request, employee_id: int, data: EmployeeCreation):
     user = request.user
     if user.role=='admin' and user.organization:

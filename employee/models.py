@@ -5,15 +5,21 @@ class Organization(models.Model):
     name = models.CharField(max_length=255)
     domain = models.CharField(max_length=255, unique=True) 
     logo=models.FileField(upload_to='logos/',null=True,blank=True)
+    address=models.JSONField()
+    created_at=models.DateTimeField(auto_now_add=True)
 
 class UserProfile(AbstractUser):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
     role = models.CharField(max_length=50, choices=[('admin', 'Admin'), ('employee', 'Employee')])
     name = models.CharField(max_length=50)
     phone = models.CharField(max_length=10, unique=True)
+
+class Employee(models.Model):
+    user=models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='Userprofile')
+    created_by=models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='employee_created')
     employee_code=models.CharField(max_length=100)
     profile=models.FileField(upload_to='profiles/',null=True)
-    reporting_manager = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='manager')
+    reporting_manager = models.ForeignKey(UserProfile, on_delete=models.CASCADE, null=True, blank=True, related_name='manager')
     business_unit=models.CharField(max_length=100,null=True)
     department=models.CharField(max_length=100,null=True)
     designation=models.CharField(max_length=100,null=True)
@@ -85,6 +91,8 @@ class PersonalDetail(models.Model):
         return f"Personal Details of {self.user.name}"
     
 class General(models.Model):
+    crtd_by=models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='created')
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     company_name=models.CharField(max_length=255)
     company_logo=models.FileField(upload_to='logos/')
     website_url=models.CharField(max_length=100)
@@ -101,6 +109,8 @@ class General(models.Model):
         return self.company_name
 
 class employee_setting(models.Model):
+    created=models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='emp_created')
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     pan=models.BooleanField(default=False,null=True)
     aadhar=models.BooleanField(default=False,null=True)
     job_history=models.BooleanField(default=False,null=True)
