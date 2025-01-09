@@ -79,4 +79,4 @@ class Bank(models.Model):
     document = models.FileField(upload_to='bank/', null=True, blank=True)
 
     def __str__(self):
-        return f"bank details of {self.employee.user.name}"
+        return f"Bank details of {self.employee.user.name}"
