@@ -15,19 +15,22 @@ from ninja_jwt.tokens import RefreshToken
 from ninja.errors import HttpError
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ObjectDoesNotExist
+from employee.models import Employee
 
 user_api = Router(tags=['user'])
 User = get_user_model()
 
-# @user_api.post("/userprofile", auth=None, response={201: TokenSchema, 409: Message})
-# async def register(request, data: UserCreation):
-#     if not await User.objects.filter(Q(username=data.username) | Q(email=data.email)).aexists():
-#         user = await User.objects.acreate(**data.dict())
-#         user.set_password(data.password)
-#         await user.asave()
-#         refresh = RefreshToken.for_user(user)
-#         return 201, {'access': str(refresh.access_token), 'refresh': str(refresh)}
-#     return 409, {"message": "User already exists"}
+@org_api.post("/create_organization_and_user", response={201: Message, 403: Message, 409:Message})
+def create_organization_and_user(request, data: OrganizationSchema):
+    created_by = request.auth
+    if User.objects.filter(username=data.username).exists() or User.objects.filter(email=data.email).exists():
+        org = Organization.objects.create(name=data.organisation_name, **data.dict())
+        user = User.objects.create(**data.dict())
+        user.set_password(data.password)
+        user.save()
+        employee = Employee.objects.create(user=user, created_by=created_by)
+        return 201, {"message": "Organization created successfully."}
+    return 403, {"message": "Organisation with same username/ Email already exists"}
 
 @user_api.post("/login", auth=None, response={200: TokenSchema, 401: Message})
 async def login(request, data: LoginSchema):
@@ -37,21 +40,14 @@ async def login(request, data: LoginSchema):
     # Fetch related fields asynchronously
     organization = await sync_to_async(lambda: user.organization)()
     role = await sync_to_async(lambda:user.role)()
-    if user.role =='superadmin':
-        refresh = RefreshToken.for_user(user)
-        return 200, {
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-            "role": role,
-            "organization": ""  # Convert to string
-        }
     refresh = RefreshToken.for_user(user)
     return 200, { 
         "access": str(refresh.access_token),
         "refresh": str(refresh),
         "role": role,
-        "organization": str(organization.id)  # Convert to string
+        "organization": str(organization.id) if user.role =='superadmin' else ''
     }
+
 @user_api.post("/refresh", auth=None, response={200: TokenSchema, 401: Message})
 def refresh_token(request, token_data: TokenRefreshSchema):
     try:

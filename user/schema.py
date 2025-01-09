@@ -33,5 +33,14 @@ class LoginSchema(Schema):
     username:str
     password:str
 
-
-
+class OrganizationSchema(Schema):
+    username: str
+    email: str
+    password: str
+    name: str
+    phone: str
+    role: str = "admin"
+    organisation_name: str
+    domain: str
+    logo: Optional[str] = None  # Optional
+    address:Dict[str,str]

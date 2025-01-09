@@ -17,16 +17,6 @@ from ninja.errors import HttpError
 employee_api = Router(tags=['employee'])
 User = get_user_model()
 
-# @user_api.post("/userprofile", auth=None, response={201: TokenSchema, 409: Message})
-# async def register(request, data: UserCreation):
-#     if not await User.objects.filter(Q(username=data.username) | Q(email=data.email)).aexists():
-#         user = await User.objects.acreate(**data.dict())
-#         user.set_password(data.password)
-#         await user.asave()
-#         refresh = RefreshToken.for_user(user)
-#         return 201, {'access': str(refresh.access_token), 'refresh': str(refresh)}
-#     return 409, {"message": "User already exists"}
-
 @employee_api.post("/create_employee", response={201: EmployeeCreation, 400: Message})
 async def create_employee(request, data: EmployeeCreation):
     user = request.user

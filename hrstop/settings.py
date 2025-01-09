@@ -42,9 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'ninja_jwt',
-    'employee',
-    'organization',
     'user',
+    'employee',
     'settings',
 ]
 
@@ -67,7 +66,7 @@ CORS_ALLOW_HEADERS = ['accept', 'accept-encoding', 'authorization', 'content-typ
 
 
 ROOT_URLCONF = 'hrstop.urls'
-AUTH_USER_MODEL = 'employee.UserProfile'
+AUTH_USER_MODEL = 'user.UserProfile'
 
 TEMPLATES = [
     {
