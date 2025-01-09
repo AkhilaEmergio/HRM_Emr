@@ -59,7 +59,4 @@ def refresh_token(request, token_data: TokenRefreshSchema):
 @user_api.get("/", response={200: UserData, 401: Message})
 async def user(request):
     user = request.auth
-    return 200, user 
-
-
-
+    return 200, user
