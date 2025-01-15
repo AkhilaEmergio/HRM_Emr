@@ -1,5 +1,5 @@
 from django.utils.deprecation import MiddlewareMixin
-from employee.models import Organization
+from user.models import Organization
 
 class OrganizationMiddleware(MiddlewareMixin):
     def process_request(self, request):

@@ -5,15 +5,15 @@ from django.conf.urls.static import static
 from ninja import NinjaAPI
 from .utils.auth import *
 from employee.views import *
-from organization.views import *
 from user.views import *
-from settings.views import *
+from settings.general_settings.views import *
+from settings.employee_settings.views import *
 
 api = NinjaAPI(auth=AsyncJWTAuth())
 api.add_router('employee', employee_api)
-api.add_router('organization', org_api)
 api.add_router('user', user_api)
-api.add_router('settings', setting_api)
+api.add_router('general_settings', general_setting_api)
+api.add_router('employee_settings', employee_setting_api)
 
 
 urlpatterns = [

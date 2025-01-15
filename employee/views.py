@@ -2,7 +2,7 @@ from ninja import PatchDict, Router
 from django.contrib.auth import get_user_model
 from .schema import *
 from typing import *
-from .models import *
+from user.models import *
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.tokens import RefreshToken
 from django.contrib.auth import authenticate

@@ -5,17 +5,22 @@ from employee.schema import *
 
 
 class GeneralSchema(Schema):
-    company_name: str
-    company_logo: Optional[str]  # File URL or path
-    website_url: str
-    email_id: str
-    employee_code: Optional[str]
-    address: str
-    state: str
-    pincode: str
+    organization_name: str
+    domain: str
+    address: dict[str,str]
     fax: Optional[str] = None
-    phone: str
     timezone: str
+
+class organizationDetail(Schema):
+     id:int
+     name:str
+
+class UserDetail(Schema):
+    name:str
+    email:str
+    phone:str
+    role:str
+    # organization:Optional[organizationDetail]=None
 
 class Message(Schema):
     message: str
@@ -27,7 +32,7 @@ class EmployeeSchema(Schema):
     education:Optional[bool]
     family:Optional[bool]
     access:Optional[bool]
-
+ 
 class DepartmentInputSchema(Schema):
     title: str
     description: Optional[str] = None
@@ -36,8 +41,8 @@ class DepartmentInputSchema(Schema):
 class DepartmentSchema(Schema):
     title: str
     description: Optional[str] = None
-    department_head:Optional[EmployeeCreation] 
-    updated_by: Optional[EmployeeCreation]
+    department_head:Optional[UserDetail] 
+    updated_by: Optional[UserDetail]
 
 class DesignationInputSchema(Schema):
     title: str
@@ -48,7 +53,7 @@ class DesignationSchema(Schema):
     title: str
     description: Optional[str] = None
     rank: Optional[str] = None
-    updated:Optional[EmployeeCreation]
+    updated_by:Optional[UserDetail]
 
 class BandInputschema(Schema):
     title: str
@@ -57,7 +62,7 @@ class BandInputschema(Schema):
 class Bandschema(Schema):
     title: str
     rank: Optional[str] = None
-    updated_by: EmployeeCreation
+    updated_by:UserDetail
 
 class BusinessUnitInputSchema(Schema):
     title: str
@@ -67,22 +72,22 @@ class BusinessUnitInputSchema(Schema):
 class BusinessUnitSchema(Schema):
     title: str
     description: Optional[str] = None
-    unit_head: Optional[EmployeeCreation] = None
-    updated_by: Optional[EmployeeCreation]
+    unit_head: Optional[UserDetail] = None
+    updated_by: Optional[UserDetail]
 
 class BillingInfoInputSchema(Schema):
     name:str
-    Address:Dict[str,str]
-    GSTIN:Optional[str]
-    PAN:Optional[str]
+    address:Dict[str,str]
+    gstin:Optional[str]
+    pan:Optional[str]
     country:Optional[str]
 
 class BillingInfoSchema(Schema):
     name:str
-    Address:Dict[str,str]
-    GSTIN:Optional[str]
-    PAN:Optional[str]
+    address:Dict[str,str]
+    gstin:Optional[str]
+    pan:Optional[str]
     country:Optional[str]
-    updated_by:EmployeeCreation
+    updated_by:UserDetail
 
 

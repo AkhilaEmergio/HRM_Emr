@@ -15,17 +15,17 @@ from ninja_jwt.tokens import RefreshToken
 from ninja.errors import HttpError
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ObjectDoesNotExist
-from employee.models import Employee
+from employee.basic_details.models import Employee
 
 user_api = Router(tags=['user'])
 User = get_user_model()
 
-@org_api.post("/create_organization_and_user", response={201: Message, 403: Message, 409:Message})
+@user_api.post("/create_organization_and_user", response={201: Message, 403: Message, 409:Message})
 def create_organization_and_user(request, data: OrganizationSchema):
     created_by = request.auth
     if User.objects.filter(username=data.username).exists() or User.objects.filter(email=data.email).exists():
-        org = Organization.objects.create(name=data.organisation_name, **data.dict())
-        user = User.objects.create(**data.dict())
+        org = Organization.objects.create(organization_name=data.organisation_name,domain=data.domain,logo=data.logo,address=data.address)
+        user = User.objects.create(username=data.username,email=data.email,name=data.name,phone=data.phone,role=data.role,organization=org)
         user.set_password(data.password)
         user.save()
         employee = Employee.objects.create(user=user, created_by=created_by)
@@ -45,7 +45,7 @@ async def login(request, data: LoginSchema):
         "access": str(refresh.access_token),
         "refresh": str(refresh),
         "role": role,
-        "organization": str(organization.id) if user.role =='superadmin' else ''
+        "organization": "" if user.role =='superadmin' else str(organization.id)
     }
 
 @user_api.post("/refresh", auth=None, response={200: TokenSchema, 401: Message})
