@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from ninja import Schema
 from typing import *
-from employee.schema import *
+from employee.basic_details.schema import *
 
 
 class GeneralSchema(Schema):

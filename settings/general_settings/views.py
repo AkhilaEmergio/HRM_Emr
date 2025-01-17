@@ -1,6 +1,6 @@
 from ninja import PatchDict, Router
 from django.contrib.auth import get_user_model
-from .schema import *
+from settings.general_settings.schema import *
 from typing import *
 from user.models import *
 from .models import *
