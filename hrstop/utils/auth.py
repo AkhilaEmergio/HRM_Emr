@@ -1,7 +1,7 @@
 from django.conf import settings
 import jwt
 from ninja.security import HttpBearer
-from employee.models import *
+from user.models import *
 
 class AsyncJWTAuth(HttpBearer):
     async def authenticate(self, request, token):

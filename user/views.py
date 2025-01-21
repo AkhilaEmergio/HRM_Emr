@@ -15,12 +15,12 @@ from ninja_jwt.tokens import RefreshToken
 from ninja.errors import HttpError
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ObjectDoesNotExist
-from employee.models import Employee
+from employee.basic_details.models import Employee
 
 user_api = Router(tags=['user'])
 User = get_user_model()
 
-@org_api.post("/create_organization_and_user", response={201: Message, 403: Message, 409:Message})
+@user_api.post("/create_organization_and_user", response={201: Message, 403: Message, 409:Message})
 def create_organization_and_user(request, data: OrganizationSchema):
     created_by = request.auth
     if User.objects.filter(username=data.username).exists() or User.objects.filter(email=data.email).exists():
