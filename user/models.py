@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class Organization(models.Model):
-    name = models.CharField(max_length=255)
+    organization_name = models.CharField(max_length=255)
     domain = models.CharField(max_length=255, unique=True) 
     organisation_code = models.CharField(max_length=255)
     logo = models.FileField(upload_to='logos/',null=True,blank=True)
