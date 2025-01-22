@@ -13,6 +13,6 @@ class Organization(models.Model):
 
 class UserProfile(AbstractUser):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
-    role = models.CharField(max_length=50, choices=[('admin', 'Admin'), ('employee', 'Employee')])
+    role = models.CharField(max_length=50, choices=[('admin', 'Admin'), ('employee', 'Employee'),('superadmin','Superadmin')])
     name = models.CharField(max_length=50)
     phone = models.CharField(max_length=10, unique=True)
