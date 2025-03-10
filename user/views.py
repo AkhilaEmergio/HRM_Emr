@@ -52,7 +52,7 @@ async def login(request, data: LoginSchema):
 def refresh_token(request, token_data: TokenRefreshSchema):
     try:
         refresh = RefreshToken(token_data.refresh)   
-        return 200, {'access': str(refresh.access_token),'refresh': str(refresh)}
+        return 200, {'access': str(refresh.access_token),'refresh': str(refresh),'role':"",'organization':""}
     except Exception: 
         return 401, {"message": "Invalid refresh token"}
 
