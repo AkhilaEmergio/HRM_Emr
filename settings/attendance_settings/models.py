@@ -135,12 +135,45 @@ class WeeklyOff(models.Model):
 
 class AllowedIP(models.Model):
     organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
-    ip_address = models.CharField(max_length=100)
+    ip_address = models.CharField(max_length=100,null=True)
     addedby = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='ip_added_by')
-    addedon = models.DateTimeField(auto_now_add=True)
+    addedon = models.DateTimeField(auto_now_add=True,null=True)
     added_from_ip = models.CharField(max_length=100, null=True, blank=True)
 
-      
+
+class CompensationRules(models.Model):
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
+    daily_eligiibility = models.CharField(max_length=100,null=True)
+    weekoff_eligiibility = models.CharField(max_length=100,null=True)
+    holiday_eligiibility = models.CharField(max_length=100,null=True)
+    daily_rule=models.JSONField(null=True)
+    weekoff_rule=models.JSONField(null=True)
+    holiday_rule=models.JSONField(null=True)
+
+class CompOffRules(models.Model):
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
+    daily_eligiibility = models.CharField(max_length=100,null=True)
+    weekoff_eligiibility = models.CharField(max_length=100,null=True)
+    holiday_eligiibility = models.CharField(max_length=100,null=True)
+    daily_rule=models.JSONField(null=True)
+    weekoff_rule=models.JSONField(null=True)
+    holiday_rule=models.JSONField(null=True)
+
+class UnderTimeRule(models.Model):
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
+    eligiblity_hours = models.IntegerField(null=True)
+    consider_absent=models.BooleanField(default=False,null=True)
+    conside_half_day=models.BooleanField(default=False,null=True)
+
+class Shift(models.Model):
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
+    shift_type=models.CharField(max_length=100,choices=[('Fixed','Fixed'),('Flexible','Flexible')],null=True)
+    shift_code=models.CharField(max_length=100,null=True)
+    shift_title=models.CharField(max_length=100,null=True)
+    description=models.TextField(null=True)
+    timein=models.TimeField(null=True)
+    timeout=models.TimeField(null=True)
+    make_default_shift=models.BooleanField(default=False,null=True)
 
     
 
