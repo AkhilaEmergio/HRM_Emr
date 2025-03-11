@@ -1,5 +1,5 @@
 from django.db import models
-from user.models import Organization
+from user.models import Organization,UserProfile
 
 # Create your models here.
 
@@ -9,24 +9,24 @@ class AttendaceSettings(models.Model):
         ("present", "Present")
     ]
     organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
-    enable_attendance = models.BooleanField(default=True)
-    default_attendance_status = models.CharField(max_length=20, choices=ATTENDANCE_STATUS_CHOICES, default="absent",)
-    deduct_salary_for_absent_days = models.CharField(max_length=20, default="yes")
-    company_start_time = models.TimeField()
-    company_end_time = models.TimeField()
-    hide_total_hours = models.BooleanField(default=False)
-    hide_attendance_punches = models.BooleanField(default=False)
-    disable_web_attendance = models.BooleanField(default=False)
-    enable_ip_restrictions = models.BooleanField(default=False)
-    disable_mobile_attendance = models.BooleanField(default=False)
+    enable_attendance = models.BooleanField(default=True,null=True)
+    default_attendance_status = models.CharField(max_length=20, choices=ATTENDANCE_STATUS_CHOICES, default="absent",null=True)
+    deduct_salary_for_absent_days = models.CharField(max_length=20, default="yes",null=True)
+    company_start_time = models.TimeField(null=True)
+    company_end_time = models.TimeField(null=True)
+    hide_total_hours = models.BooleanField(default=False,null=True)
+    hide_attendance_punches = models.BooleanField(default=False,null=True)
+    disable_web_attendance = models.BooleanField(default=False,null=True)
+    enable_ip_restrictions = models.BooleanField(default=False,null=True)
+    disable_mobile_attendance = models.BooleanField(default=False,null=True)
 
 class RosterShiftSettings(models.Model):
     organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
-    enable_roster_shifts = models.BooleanField(default=False)
-    allow_managers_assign_shifts = models.BooleanField(default=False)
-    restrict_shift_change_days = models.PositiveIntegerField(default=0)
-    restrict_week_off_per_month = models.PositiveIntegerField(default=1)
-    restrict_week_off_per_week = models.PositiveIntegerField(default=1)
+    enable_roster_shifts = models.BooleanField(default=False,null=True)
+    allow_managers_assign_shifts = models.BooleanField(default=False,null=True)
+    restrict_shift_change_days = models.PositiveIntegerField(default=0,null=True)
+    restrict_week_off_per_month = models.PositiveIntegerField(default=1,null=True)
+    restrict_week_off_per_week = models.PositiveIntegerField(default=1,null=True)
 
 class ShiftChangeSettings(models.Model):
     approval_status_choices = [
@@ -34,18 +34,18 @@ class ShiftChangeSettings(models.Model):
         ("Approved", "Approved"),
     ]
     organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
-    allow_employee_shift_change_request = models.BooleanField(default=False)
-    enable_manager_approval = models.BooleanField(default=False)
-    default_approval_status = models.CharField(max_length=20,choices=approval_status_choices,default="Pending")
+    allow_employee_shift_change_request = models.BooleanField(default=False,null=True)
+    enable_manager_approval = models.BooleanField(default=False,null=True)
+    default_approval_status = models.CharField(max_length=20,choices=approval_status_choices,default="Pending",null=True)
 
 class SandwichRulesSettings(models.Model):
     organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
-    enable_sandwich_rules = models.BooleanField(default=False)
-    week_off_holidays_between_absents = models.BooleanField(default=False)
-    week_off_holidays_after_absent = models.BooleanField(default=False)
-    week_off_holidays_before_absent = models.BooleanField(default=False)
-    absent_week_offs_holidays_beginning_month = models.BooleanField(default=False)
-    absent_week_offs_holidays_end_month = models.BooleanField(default=False)
+    enable_sandwich_rules = models.BooleanField(default=False,null=True)
+    week_off_holidays_between_absents = models.BooleanField(default=False,null=True)
+    week_off_holidays_after_absent = models.BooleanField(default=False,null=True)
+    week_off_holidays_before_absent = models.BooleanField(default=False,null=True)
+    absent_week_offs_holidays_beginning_month = models.BooleanField(default=False,null=True)
+    absent_week_offs_holidays_end_month = models.BooleanField(default=False,null=True)
 
 class RegularizationPolicies(models.Model):
     PUNCH_APPROVAL_CHOICES = [
@@ -53,21 +53,21 @@ class RegularizationPolicies(models.Model):
         ("Approved", "Approved"),
     ]
     organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
-    enable_justify_punch = models.BooleanField(default=False)
-    restrict_attendance_justification_days = models.IntegerField(default=0)
-    enable_request_punch = models.BooleanField(default=False)
-    enable_multiple_punches = models.BooleanField(default=False)
-    restrict_punch_request_days = models.IntegerField(default=0)
-    punch_approval_status = models.CharField(max_length=20, choices=PUNCH_APPROVAL_CHOICES, default="Manager Approved")
+    enable_justify_punch = models.BooleanField(default=False, null=True)
+    restrict_attendance_justification_days = models.IntegerField(default=0, null=True)
+    enable_request_punch = models.BooleanField(default=False, null=True)
+    enable_multiple_punches = models.BooleanField(default=False, null=True)
+    restrict_punch_request_days = models.IntegerField(default=0, null=True)
+    punch_approval_status = models.CharField(max_length=20, choices=PUNCH_APPROVAL_CHOICES, default="Manager Approved",null=True)
     # Restrictions for Employee Attendance Actions
-    restrict_duty_punch_employee = models.IntegerField(default=0)
-    restrict_real_time_justify_employee = models.IntegerField(default=0)
+    restrict_duty_punch_employee = models.IntegerField(default=0, null=True)
+    restrict_real_time_justify_employee = models.IntegerField(default=0, null=True)
     # Restrictions for Manager Attendance Actions
-    restrict_punch_request_manager = models.IntegerField(default=0)
-    restrict_attendance_approval_manager = models.IntegerField(default=0)
-    restrict_late_justify_manager = models.IntegerField(default=0)
-    restrict_early_exit_justify_manager = models.IntegerField(default=0)
-    restrict_total_time_justify_manager = models.IntegerField(default=0)
+    restrict_punch_request_manager = models.IntegerField(default=0, null=True)
+    restrict_attendance_approval_manager = models.IntegerField(default=0, null=True)
+    restrict_late_justify_manager = models.IntegerField(default=0, null=True)
+    restrict_early_exit_justify_manager = models.IntegerField(default=0, null=True)
+    restrict_total_time_justify_manager = models.IntegerField(default=0, null=True)
 
 class TimeManagementPolicy(models.Model):
     OVERTIME_APPROVAL_CHOICES = [
@@ -85,25 +85,25 @@ class TimeManagementPolicy(models.Model):
         ("CompOff", "Automatically raise CompOff request"),
     ]
     organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
-    enable_overtime = models.BooleanField(default=False)   
-    overtime_approval_status = models.CharField(max_length=20, choices=OVERTIME_APPROVAL_CHOICES, default="Manager Approved")
-    round_off_minutes = models.BooleanField(default=False)
-    rounding_method = models.CharField(max_length=20, choices=ROUNDING_OPTIONS, default="Standard")
-    rounding_value = models.IntegerField(default=1)
-    convert_overtime_to_compensation = models.BooleanField(default=False)
-    comp_off_request_on_overtime = models.BooleanField(default=False)
-    default_overtime_rule = models.CharField(max_length=20, choices=DEFAULT_RULES_CHOICES, default="Compensation")
-    enable_undertime = models.BooleanField(default=False)
-    enable_attendance_rules = models.BooleanField(default=False)
+    enable_overtime = models.BooleanField(default=False,null=True)   
+    overtime_approval_status = models.CharField(max_length=20, choices=OVERTIME_APPROVAL_CHOICES, default="Manager Approved",null=True)
+    round_off_minutes = models.BooleanField(default=False,null=True)
+    rounding_method = models.CharField(max_length=20, choices=ROUNDING_OPTIONS, default="Standard",null=True)
+    rounding_value = models.IntegerField(default=1,null=True)
+    convert_overtime_to_compensation = models.BooleanField(default=False,null=True)
+    comp_off_request_on_overtime = models.BooleanField(default=False,null=True)
+    default_overtime_rule = models.CharField(max_length=20, choices=DEFAULT_RULES_CHOICES, default="Compensation",null=True)
+    enable_undertime = models.BooleanField(default=False,null=True)
+    enable_attendance_rules = models.BooleanField(default=False,null=True)
 
 class CalculationPolicy(models.Model):
     organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     enable_attendance_unit = models.BooleanField(default=False)
-    number_of_unit_for_absent = models.IntegerField(default=1)
-    deduct_break_hours = models.BooleanField(default=False)   
-    daily_auto_attendance_calculation = models.BooleanField(default=True)
-    enable_leave_based_rules = models.BooleanField(default=True)
-    auto_assign_shift = models.BooleanField(default=False)
+    number_of_unit_for_absent = models.IntegerField(default=1,null=True)
+    deduct_break_hours = models.BooleanField(default=False,null=True)   
+    daily_auto_attendance_calculation = models.BooleanField(default=True,null=True)
+    enable_leave_based_rules = models.BooleanField(default=True,null=True)
+    auto_assign_shift = models.BooleanField(default=False,null=True)
   
 
 class WeeklyOff(models.Model):
@@ -132,6 +132,13 @@ class WeeklyOff(models.Model):
     def __str__(self):
         return f"Weekly Off on {self.weekday}"
 
+
+class AllowedIP(models.Model):
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
+    ip_address = models.CharField(max_length=100)
+    addedby = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='ip_added_by')
+    addedon = models.DateTimeField(auto_now_add=True)
+    added_from_ip = models.CharField(max_length=100, null=True, blank=True)
 
       
 
