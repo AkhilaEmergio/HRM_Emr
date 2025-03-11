@@ -1,4 +1,5 @@
 from django.db import models
+from user.models import Organization
 
 # Create your models here.
 
@@ -7,6 +8,7 @@ class AttendaceSettings(models.Model):
         ("absent", "Absent"),
         ("present", "Present")
     ]
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     enable_attendance = models.BooleanField(default=True)
     default_attendance_status = models.CharField(max_length=20, choices=ATTENDANCE_STATUS_CHOICES, default="absent",)
     deduct_salary_for_absent_days = models.CharField(max_length=20, default="yes")
@@ -19,6 +21,7 @@ class AttendaceSettings(models.Model):
     disable_mobile_attendance = models.BooleanField(default=False)
 
 class RosterShiftSettings(models.Model):
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     enable_roster_shifts = models.BooleanField(default=False)
     allow_managers_assign_shifts = models.BooleanField(default=False)
     restrict_shift_change_days = models.PositiveIntegerField(default=0)
@@ -30,11 +33,13 @@ class ShiftChangeSettings(models.Model):
         ("Manager Approved", "Manager Approved"),
         ("Approved", "Approved"),
     ]
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     allow_employee_shift_change_request = models.BooleanField(default=False)
     enable_manager_approval = models.BooleanField(default=False)
     default_approval_status = models.CharField(max_length=20,choices=approval_status_choices,default="Pending")
 
 class SandwichRulesSettings(models.Model):
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     enable_sandwich_rules = models.BooleanField(default=False)
     week_off_holidays_between_absents = models.BooleanField(default=False)
     week_off_holidays_after_absent = models.BooleanField(default=False)
@@ -47,6 +52,7 @@ class RegularizationPolicies(models.Model):
         ("Manager Approved", "Manager Approved"),
         ("Approved", "Approved"),
     ]
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     enable_justify_punch = models.BooleanField(default=False)
     restrict_attendance_justification_days = models.IntegerField(default=0)
     enable_request_punch = models.BooleanField(default=False)
@@ -78,6 +84,7 @@ class TimeManagementPolicy(models.Model):
         ("Compensation", "Convert Approved Overtime into Compensation"),
         ("CompOff", "Automatically raise CompOff request"),
     ]
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     enable_overtime = models.BooleanField(default=False)   
     overtime_approval_status = models.CharField(max_length=20, choices=OVERTIME_APPROVAL_CHOICES, default="Manager Approved")
     round_off_minutes = models.BooleanField(default=False)
@@ -90,6 +97,7 @@ class TimeManagementPolicy(models.Model):
     enable_attendance_rules = models.BooleanField(default=False)
 
 class CalculationPolicy(models.Model):
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     enable_attendance_unit = models.BooleanField(default=False)
     number_of_unit_for_absent = models.IntegerField(default=1)
     deduct_break_hours = models.BooleanField(default=False)   
@@ -108,18 +116,18 @@ class WeeklyOff(models.Model):
         ('Saturday', 'Saturday'),
         ('Sunday', 'Sunday'),
     ]
-
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     weekday = models.CharField(max_length=10, choices=WEEKDAYS)
-    all_weeks = models.BooleanField(default=False)
-    second_week = models.BooleanField(default=False)
-    fifth_week = models.BooleanField(default=False)
-    alternate_weeks = models.BooleanField(default=False)
-    all_but_last = models.BooleanField(default=False)
-    third_week = models.BooleanField(default=False)
-    last_two_weeks = models.BooleanField(default=False)
-    first_week = models.BooleanField(default=False)
-    fourth_week = models.BooleanField(default=False)
-    last_week = models.BooleanField(default=False)
+    all_weeks = models.BooleanField(default=False,null=True)
+    second_week = models.BooleanField(default=False,null=True)
+    fifth_week = models.BooleanField(default=False,null=True)
+    alternate_weeks = models.BooleanField(default=False,null=True)
+    all_but_last = models.BooleanField(default=False,null=True)
+    third_week = models.BooleanField(default=False,null=True)
+    last_two_weeks = models.BooleanField(default=False,null=True)
+    first_week = models.BooleanField(default=False,null=True)
+    fourth_week = models.BooleanField(default=False,null=True)
+    last_week = models.BooleanField(default=False,null=True)
 
     def __str__(self):
         return f"Weekly Off on {self.weekday}"
