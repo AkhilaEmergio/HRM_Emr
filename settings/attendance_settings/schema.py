@@ -54,3 +54,14 @@ class RegularizationPoliciesSchema(Schema):
     restrict_total_time_justify_manager: Optional[int]
 
 
+class ShiftSchema(Schema):
+    organization: int
+    shift_type: Optional[str]
+    shift_code: Optional[str]
+    shift_title:Optional[str]
+    description: Optional[str]
+    time_in: Optional[time]
+    time_out: Optional[time]    
+    make_default_shift: Optional[bool]
+
+

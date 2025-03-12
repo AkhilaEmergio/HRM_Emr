@@ -114,3 +114,31 @@ async def update_regularization_policies(request, data: RegularizationPoliciesSc
         return 200, {"message": "Regularization Policies updated successfully."}
     except RegularizationPolicies.DoesNotExist:
         return 404, {"message": "Regularization Policies not found."}
+    
+@attendance_settings_api.post("/manage_shift", response={201: Message, 403: Message, 409: Message})
+async def manage_shift(request, data: ShiftSchema):
+    created_by = request.auth
+    if Shift.objects.filter(organization=data.organization,shift_code=data.shift_code).exists():
+        return 409, {"message": "Shift already exists for this organization"}
+    Shift.objects.create(**data.dict())
+    return 201, {"message": "Shift created successfully."}
+
+@attendance_settings_api.get("/manage_shift", response={200: ShiftSchema, 404: Message})
+async def get_shift(request, organization:int):
+    try:
+        shift = Shift.objects.get(organization=organization)
+        return 200, shift
+    except Shift.DoesNotExist:
+        return 404, {"message": "Shift not found."}
+    
+@attendance_settings_api.put("/manage_shift", response={200: Message, 404: Message})
+async def update_shift(request, data: ShiftSchema):
+    try:
+        shift = Shift.objects.get(organization=data.organization)
+        for key, value in data.dict().items():
+            setattr(shift, key, value)
+        shift.save()
+        return 200, {"message": "Shift updated successfully."}
+    except Shift.DoesNotExist:
+        return 404, {"message": "Shift not found."}
+    
