@@ -20,17 +20,17 @@ from employee.basic_details.models import Employee
 user_api = Router(tags=['user'])
 User = get_user_model()
 
-@user_api.post("/create_organization_and_user", response={201: Message, 403: Message, 409:Message})
+@user_api.post("/create_organization_and_user", response={201: Message, 403: Message, 409: Message})
 def create_organization_and_user(request, data: OrganizationSchema):
     created_by = request.auth
-    if User.objects.filter(username=data.username).exists() or User.objects.filter(email=data.email).exists():
-        org = Organization.objects.create(name=data.organisation_name, **data.dict())
-        user = User.objects.create(**data.dict())
-        user.set_password(data.password)
-        user.save()
-        employee = Employee.objects.create(user=user, created_by=created_by)
-        return 201, {"message": "Organization created successfully."}
-    return 403, {"message": "Organisation with same username/ Email already exists"}
+    if User.objects.filter(Q(username=data.username) | Q(email=data.email)).exists():
+        return 409, {"message": "Organization with same username/Email already exists"}
+    org = Organization.objects.create(organization_name=data.organisation_name,domain=data.domain,logo=data.logo,address=data.address)
+    user = User.objects.create(username=data.username,email=data.email,name=data.name,phone=data.phone,role=data.role,organization=org)
+    user.set_password(data.password)
+    user.save()
+    employee = Employee.objects.create(user=user, created_by=created_by)
+    return 201, {"message": "Organization created successfully."}
 
 @user_api.post("/login", auth=None, response={200: TokenSchema, 401: Message})
 async def login(request, data: LoginSchema):
@@ -45,14 +45,14 @@ async def login(request, data: LoginSchema):
         "access": str(refresh.access_token),
         "refresh": str(refresh),
         "role": role,
-        "organization": str(organization.id) if user.role =='superadmin' else ''
+        "organization": "" if user.role =='superadmin' else str(organization.id)
     }
 
 @user_api.post("/refresh", auth=None, response={200: TokenSchema, 401: Message})
 def refresh_token(request, token_data: TokenRefreshSchema):
     try:
         refresh = RefreshToken(token_data.refresh)   
-        return 200, {'access': str(refresh.access_token),'refresh': str(refresh)}
+        return 200, {'access': str(refresh.access_token),'refresh': str(refresh),'role':"",'organization':""}
     except Exception: 
         return 401, {"message": "Invalid refresh token"}
 

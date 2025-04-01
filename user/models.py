@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class Organization(models.Model):
-    name = models.CharField(max_length=255)
+    organization_name = models.CharField(max_length=255)
     domain = models.CharField(max_length=255, unique=True) 
     organisation_code = models.CharField(max_length=255)
     logo = models.FileField(upload_to='logos/',null=True,blank=True)
@@ -13,6 +13,6 @@ class Organization(models.Model):
 
 class UserProfile(AbstractUser):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
-    role = models.CharField(max_length=50, choices=[('admin', 'Admin'), ('employee', 'Employee')])
+    role = models.CharField(max_length=50, choices=[('admin', 'Admin'), ('employee', 'Employee'),('superadmin','Superadmin')])
     name = models.CharField(max_length=50)
     phone = models.CharField(max_length=10, unique=True)

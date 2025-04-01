@@ -49,7 +49,7 @@ class Jobhistory(models.Model):
     job_title = models.CharField(max_length=100)
     employee_code = models.CharField(max_length=100,null=True)
     joining_date = models.DateField()
-    relieving_date = models.DateField()
+    relieving_date = models.DateField()  
     last_CTC = models.CharField(max_length=100)
     reason = models.TextField(null=True)
     document = models.FileField(upload_to='job/',null=True)
@@ -71,7 +71,7 @@ class References(models.Model):
 class Bank(models.Model):
     employee = models.ForeignKey(Employee,on_delete = models.CASCADE,null=True)
     name_of_bank = models.CharField(max_length=100)
-    account_no = models.CharField(max_length=100)
+    account_no = models.CharField(max_length=100)  
     ifsc = models.CharField(max_length=50)
     branch = models.CharField(max_length=100, null=True, blank=True)
     account_type = models.CharField(max_length=100)
