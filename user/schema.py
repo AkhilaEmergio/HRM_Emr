@@ -6,7 +6,6 @@ from typing import *
 class UserData(Schema):
     id: int
     username: str
-    password:str
     organization:str
     role:str
 

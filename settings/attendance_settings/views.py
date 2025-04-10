@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from ninja import Router
-from schema import *
+from settings.attendance_settings.schema import *
 from settings.attendance_settings.models import *
 # Create your views here.
 
@@ -8,7 +8,7 @@ attendance_settings_api = Router(tags=['attendance_settings'])
 
 @attendance_settings_api.post("/attendance_settings", response={201: Message, 403: Message, 409: Message})
 async def create_attendance_settings(request, data: AttendenceSettingSchema):
-    created_by = request.auth
+    user = request.auth
     if AttendaceSettings.objects.filter(organization=data.organization).exists():
         return 409, {"message": "Attendance Settings already exists for this organization"}
     AttendaceSettings.objects.create(**data.dict())
@@ -142,3 +142,30 @@ async def update_shift(request, data: ShiftSchema):
     except Shift.DoesNotExist:
         return 404, {"message": "Shift not found."}
     
+@attendance_settings_api.post("/calculate_attendance", response={200: Message, 404: Message})
+async def create_calculation_settings(request, data: CalculationSettingsSchema):
+    created_by = request.auth 
+    if CalculationSettingsSchema.objects.filter(organization=data.organization).exists():
+        return 409, {"message": "Calculation Settings already exists for this organization"}
+    CalculationSettingsSchema.objects.create(**data.dict())
+    return 201, {"message": "Calculation Settings created successfully."}
+
+@attendance_settings_api.get("/calculate_attendance", response={200: CalculationSettingsSchema, 404: Message})
+async def get_calculation_settings(request, organization:int):
+    try:
+        calculation_settings = CalculationSettingsSchema.objects.get(organization=organization)
+        return 200, calculation_settings
+    except CalculationSettingsSchema.DoesNotExist:
+        return 404, {"message": "Calculation Settings not found."}
+    
+@attendance_settings_api.put("/calculate_attendance", response={200: Message, 404: Message})
+async def update_calculation_settings(request, data: CalculationSettingsSchema):
+    try:
+        calculation_settings = CalculationSettingsSchema.objects.get(organization=data.organization)
+        for key, value in data.dict().items():
+            setattr(calculation_settings, key, value)
+        calculation_settings.save()
+        return 200, {"message": "Calculation Settings updated successfully."}
+    except CalculationSettingsSchema.DoesNotExist:  
+        return 404, {"message": "Calculation Settings not found."}
+
