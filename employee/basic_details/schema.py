@@ -6,6 +6,13 @@ class Message(Schema):
     message: str
 
 class UserDetail(Schema):
+    id: int
+    name:str
+    email:str
+    phone:str
+    role:str
+class Users(Schema):
+    id: int
     name:str
     email:str
     phone:str

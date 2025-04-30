@@ -19,6 +19,10 @@ class AttendaceSettings(models.Model):
     disable_web_attendance = models.BooleanField(default=False,null=True)
     enable_ip_restrictions = models.BooleanField(default=False,null=True)
     disable_mobile_attendance = models.BooleanField(default=False,null=True)
+    created_by = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='attendance_created_by')
+    created_on = models.DateTimeField(auto_now_add=True,null=True)
+    updated_by = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='attendance_updated_by')
+    updated_on = models.DateTimeField(auto_now=True,null=True)
 
 class RosterShiftSettings(models.Model):
     organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
@@ -27,6 +31,10 @@ class RosterShiftSettings(models.Model):
     restrict_shift_change_days = models.PositiveIntegerField(default=0,null=True)
     restrict_week_off_per_month = models.PositiveIntegerField(default=1,null=True)
     restrict_week_off_per_week = models.PositiveIntegerField(default=1,null=True)
+    created_by = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='roster_shift_created_by')
+    created_on = models.DateTimeField(auto_now_add=True,null=True)
+    updated_by = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='roster_shift_updated_by')
+    updated_on = models.DateTimeField(auto_now=True,null=True)
 
 class ShiftChangeSettings(models.Model):
     approval_status_choices = [
@@ -37,6 +45,10 @@ class ShiftChangeSettings(models.Model):
     allow_employee_shift_change_request = models.BooleanField(default=False,null=True)
     enable_manager_approval = models.BooleanField(default=False,null=True)
     default_approval_status = models.CharField(max_length=20,choices=approval_status_choices,default="Pending",null=True)
+    created_by = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='shift_change_created_by')
+    created_on = models.DateTimeField(auto_now_add=True,null=True)
+    updated_by = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='shift_change_updated_by')
+    updated_on = models.DateTimeField(auto_now=True,null=True)
 
 class SandwichRulesSettings(models.Model):
     organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
@@ -68,6 +80,10 @@ class RegularizationPolicies(models.Model):
     restrict_late_justify_manager = models.IntegerField(default=0, null=True)
     restrict_early_exit_justify_manager = models.IntegerField(default=0, null=True)
     restrict_total_time_justify_manager = models.IntegerField(default=0, null=True)
+    created_by = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='regularization_created_by')
+    created_on = models.DateTimeField(auto_now_add=True,null=True)
+    updated_by = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='regularization_updated_by')
+    updated_on = models.DateTimeField(auto_now=True,null=True)
 
 class TimeManagementPolicy(models.Model):
     OVERTIME_APPROVAL_CHOICES = [
@@ -140,7 +156,6 @@ class AllowedIP(models.Model):
     addedon = models.DateTimeField(auto_now_add=True,null=True)
     added_from_ip = models.CharField(max_length=100, null=True, blank=True)
 
-
 class CompensationRules(models.Model):
     organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
     daily_eligiibility = models.CharField(max_length=100,null=True)
@@ -172,7 +187,7 @@ class Shift(models.Model):
     shift_title=models.CharField(max_length=100,null=True)
     description=models.TextField(null=True)
     timein=models.TimeField(null=True)
-    timeout=models.TimeField(null=True)
+    timeout=models.TimeField(null=True)  
     make_default_shift=models.BooleanField(default=False,null=True)
 
     

@@ -15,8 +15,8 @@ class AttendenceSettingSchema(Schema):
     enable_attendance: bool
     default_attendance_status:Optional[str]
     deduct_salary_for_absent_days: Optional[str]
-    company_start_time:Optional[time]
-    company_end_time: Optional[time]
+    company_start_time:Optional[str]
+    company_end_time: Optional[str]
     hide_total_hours: Optional[bool]
     hide_attendance_punches: Optional[bool]
     disable_web_attendance: Optional[bool]
@@ -64,4 +64,13 @@ class ShiftSchema(Schema):
     time_out: Optional[time]    
     make_default_shift: Optional[bool]
 
+
+class CalculationSettingsSchema(Schema):
+    organization: int
+    enable_attendance_unit: Optional[bool]
+    number_of_unit_for_absent: Optional[int]
+    deduct_break_hours: Optional[bool]
+    daily_auto_attendance_calculation: Optional[bool]
+    enable_leave_based_rules: Optional[bool]
+    auto_assign_shift_work: Optional[bool]
 
