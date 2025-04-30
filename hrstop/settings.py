@@ -67,7 +67,7 @@ CSRF_TRUSTED_ORIGINS = config('DJANGO_CSRF_TRUSTED_ORIGINS', default='').split('
 
 
 ROOT_URLCONF = 'hrstop.urls'
-AUTH_USER_MODEL = 'user.UserProfile'
+AUTH_USER_MODEL = 'user.UserProfile' 
 
 TEMPLATES = [
     {

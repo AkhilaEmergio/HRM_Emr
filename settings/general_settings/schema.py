@@ -88,6 +88,6 @@ class BillingInfoSchema(Schema):
     gstin:Optional[str]
     pan:Optional[str]
     country:Optional[str]
-    updated_by:UserDetail
+    updated_by:Optional[UserDetail] 
 
 

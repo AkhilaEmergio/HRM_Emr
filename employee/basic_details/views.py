@@ -17,6 +17,41 @@ from ninja.errors import HttpError
 employee_basic_api = Router(tags=['employee_basic'])
 User = get_user_model()
 
+@employee_basic_api.get(
+    "/user-details",
+    response={200: List[Users], 401: Message}
+)
+async def get_employee_user_details(request):
+    user = request.auth
+    if not user:
+        return 401, {"message": "Unauthorized"}
+
+    organization = await sync_to_async(lambda: user.organization)()
+    if not organization:
+        return 401, {"message": "User has no organization"}
+
+    employees = await sync_to_async(
+        lambda: list(
+            User.objects.filter(organization=organization.id)
+            
+        )
+    )()
+    result = [
+        Users(
+            id=emp.id,
+            name=emp.name,  # Ensure the field exists, or use the appropriate field name
+            email=emp.email,
+            phone=emp.phone,
+            role=emp.role,
+        )
+        for emp in employees if emp
+    ]
+
+    # Return the serialized result
+    return 200, result
+
+########## EMPLOYEE ################
+
 @employee_basic_api.post("/employee", response={201: EmployeeSchema, 400: Message})
 async def create_employee(request, data: EmployeeInputSchema):
     user = request.auth
