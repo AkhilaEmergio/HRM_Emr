@@ -39,6 +39,7 @@ class DepartmentInputSchema(Schema):
     department_head: Optional[int] = None
 
 class DepartmentSchema(Schema):
+    id:int
     title: str
     description: Optional[str] = None
     department_head:Optional[UserDetail] 
@@ -50,6 +51,7 @@ class DesignationInputSchema(Schema):
     rank: Optional[str] = None
 
 class DesignationSchema(Schema):
+    id:int
     title: str
     description: Optional[str] = None
     rank: Optional[str] = None
@@ -60,6 +62,7 @@ class BandInputschema(Schema):
     rank: Optional[str] = None
 
 class Bandschema(Schema):
+    id:int
     title: str
     rank: Optional[str] = None
     updated_by:UserDetail
@@ -70,6 +73,7 @@ class BusinessUnitInputSchema(Schema):
     unit_head: Optional[str]=None
 
 class BusinessUnitSchema(Schema):
+    id:int
     title: str
     description: Optional[str] = None
     unit_head: Optional[UserDetail] = None
@@ -83,6 +87,7 @@ class BillingInfoInputSchema(Schema):
     country:Optional[str]
 
 class BillingInfoSchema(Schema):
+    id:int
     name:str
     address:Dict[str,str]
     gstin:Optional[str]
