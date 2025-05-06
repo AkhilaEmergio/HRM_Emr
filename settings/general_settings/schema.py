@@ -16,6 +16,7 @@ class organizationDetail(Schema):
      name:str
 
 class UserDetail(Schema):
+    id:int
     name:str
     email:str
     phone:str
