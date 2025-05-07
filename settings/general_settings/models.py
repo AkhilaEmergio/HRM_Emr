@@ -50,3 +50,4 @@ class BillingSettings(models.Model):
     pan = models.CharField(max_length=100, null=True)
     country = models.CharField(max_length=100, null=True)
     created_on = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE,null=True,blank=True,related_name="billing_updated")
