@@ -39,7 +39,14 @@ class AttendenceSettingOutSchema(Schema):
 
 
 class RosterShiftSettingsSchema(Schema):
-    organization: int
+    enable_roster_shifts: Optional[bool]
+    allow_managers_assign_shifts: Optional[bool]
+    restrict_shift_change_days: Optional[int]
+    restrict_week_off_per_month: Optional[int]
+    restrict_week_off_per_week: Optional[int]
+
+class RosterShiftSettingsOutSchema(Schema):
+    organization: Optional[organizationDetail]
     enable_roster_shifts: Optional[bool]
     allow_managers_assign_shifts: Optional[bool]
     restrict_shift_change_days: Optional[int]
@@ -47,13 +54,33 @@ class RosterShiftSettingsSchema(Schema):
     restrict_week_off_per_week: Optional[int]
 
 class ShiftChangeSettingsSchema(Schema):
-    organization: int
+    allow_employee_shift_change_request: Optional[bool]
+    enable_manager_approval: Optional[bool]
+    default_approval_status: Optional[str]
+
+class ShiftChangeSettingsOutSchema(Schema):
+    organization: Optional[organizationDetail]
     allow_employee_shift_change_request: Optional[bool]
     enable_manager_approval: Optional[bool]
     default_approval_status: Optional[str]
 
 class RegularizationPoliciesSchema(Schema):
-    organization: int
+    enable_justify_punch: Optional[bool]
+    restrict_attendance_justification_days: Optional[int]
+    enable_request_punch: Optional[bool]
+    enable_multiple_punches: Optional[bool]
+    restrict_punch_request_days: Optional[int]
+    punch_approval_status: Optional[str]
+    restrict_duty_punch_employee: Optional[int]
+    restrict_real_time_justify_employee: Optional[int]
+    restrict_punch_request_manager: Optional[int]
+    restrict_attendance_approval_manager: Optional[int]
+    restrict_late_justify_manager: Optional[int]
+    restrict_early_exit_justify_manager: Optional[int]
+    restrict_total_time_justify_manager: Optional[int]
+
+class RegularizationPoliciesOutSchema(Schema):
+    organization: Optional[organizationDetail]
     enable_justify_punch: Optional[bool]
     restrict_attendance_justification_days: Optional[int]
     enable_request_punch: Optional[bool]
@@ -70,7 +97,16 @@ class RegularizationPoliciesSchema(Schema):
 
 
 class ShiftSchema(Schema):
-    organization: int
+    shift_type: Optional[str]
+    shift_code: Optional[str]
+    shift_title:Optional[str]
+    description: Optional[str]
+    time_in: Optional[time]
+    time_out: Optional[time]    
+    make_default_shift: Optional[bool]
+
+class ShiftOutSchema(Schema):
+    organization: Optional[organizationDetail]
     shift_type: Optional[str]
     shift_code: Optional[str]
     shift_title:Optional[str]

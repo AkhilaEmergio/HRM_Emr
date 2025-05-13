@@ -74,89 +74,195 @@ async def update_attendance_settings(request, data: AttendenceSettingSchema):
     except AttendaceSettings.DoesNotExist:
         return 404, {"message": "Attendance Settings not found."}
 
-
+##############  ROSTER SHIFTS #############################
 
 @attendance_settings_api.post("/roster_shift_settings", response={201: Message, 403: Message, 409: Message})
-async def roster_shift_settings(request, data: RosterShiftSettingsSchema):
-    created_by = request.auth
-    if RosterShiftSettings.objects.filter(organization=data.organization).exists():
-        return 409, {"message": "Roster Shift Settings already exists for this organization"}
-    RosterShiftSettings.objects.create(**data.dict())
+async def create_roster_shift_settings(request, data: RosterShiftSettingsSchema):
+    user = request.auth
+    if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+        return 403, {"message": "Unauthorized access"}
+
+    org = await sync_to_async(lambda: user.organization)()
+    exists = await sync_to_async(RosterShiftSettings.objects.filter(organization=org).exists)()
+    if exists:
+        return 409, {"message": "Roster Shift Settings already exist for this organization"}
+
+    await sync_to_async(RosterShiftSettings.objects.create)(organization=org, **data.dict())
     return 201, {"message": "Roster Shift Settings created successfully."}
 
-@attendance_settings_api.get("/roster_shift_settings", response={200: RosterShiftSettingsSchema, 404: Message})
-async def get_roster_shift_settings(request, organization:int):
+
+
+@attendance_settings_api.get("/roster_shift_settings", response={200: RosterShiftSettingsOutSchema, 404: Message})
+async def get_roster_shift_settings(request):
+    user = request.auth
+    org = await sync_to_async(getattr)(user, "organization")
+    
+    if not org:
+        return 404, {"message": "Organization not found."}
+
     try:
-        roster_shift_settings = RosterShiftSettings.objects.get(organization=organization)
-        return 200, roster_shift_settings
+        settings = await sync_to_async(RosterShiftSettings.objects.select_related("organization").get)(organization=org)
+
+        data = {
+    "organization": {
+                "id": org.id,
+                "name": org.organization_name,
+            },  # Only the organization ID is needed here
+    **{field: getattr(settings, field) for field in [
+        "enable_roster_shifts",
+        "allow_managers_assign_shifts",
+        "restrict_shift_change_days",
+        "restrict_week_off_per_month",
+        "restrict_week_off_per_week",
+    ]},
+}
+        return 200, data
+
     except RosterShiftSettings.DoesNotExist:
         return 404, {"message": "Roster Shift Settings not found."}
-    
-@attendance_settings_api.put("/roster_shift_settings", response={200: Message, 404: Message})
+
+@attendance_settings_api.put("/roster_shift_settings", response={200: Message, 403: Message, 404: Message})
 async def update_roster_shift_settings(request, data: RosterShiftSettingsSchema):
+    user = request.auth
+    if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+        return 403, {"message": "Unauthorized access"}
+
     try:
-        roster_shift_settings = RosterShiftSettings.objects.get(organization=data.organization)
+        settings = await sync_to_async(RosterShiftSettings.objects.get)(organization=user.organization)
         for key, value in data.dict().items():
-            setattr(roster_shift_settings, key, value)
-        roster_shift_settings.save()
+            setattr(settings, key, value)
+        await sync_to_async(settings.save)()
         return 200, {"message": "Roster Shift Settings updated successfully."}
     except RosterShiftSettings.DoesNotExist:
         return 404, {"message": "Roster Shift Settings not found."}
 
-   
+################### SHIFT CHANGE SETTINGS ######################
 @attendance_settings_api.post("/shift_change_settings", response={201: Message, 403: Message, 409: Message})
-async def shift_change_settings(request, data: ShiftChangeSettingsSchema):
-    created_by = request.auth
-    if ShiftChangeSettings.objects.filter(organization=data.organization).exists():
-        return 409, {"message": "Shift Change Settings already exists for this organization"}
-    ShiftChangeSettings.objects.create(**data.dict())
+async def create_shift_change_settings(request, data: ShiftChangeSettingsSchema):
+    user = request.auth
+    if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+        return 403, {"message": "Unauthorized access"}
+
+    org = await sync_to_async(lambda: user.organization)()
+    exists = await sync_to_async(ShiftChangeSettings.objects.filter(organization=org).exists)()
+    if exists:
+        return 409, {"message": "Shift Change Settings already exist for this organization"}
+
+    await sync_to_async(ShiftChangeSettings.objects.create)(organization=org, **data.dict())
     return 201, {"message": "Shift Change Settings created successfully."}
 
-@attendance_settings_api.get("/shift_change_settings", response={200: ShiftChangeSettingsSchema, 404: Message})
-async def get_shift_change_settings(request, organization:int):
+@attendance_settings_api.get("/shift_change_settings", response={200: ShiftChangeSettingsOutSchema, 404: Message})
+async def get_shift_change_settings(request):
+    user = request.auth
+    org = await sync_to_async(getattr)(user, "organization")
+    
+    if not org:
+        return 404, {"message": "Organization not found."}
+
     try:
-        shift_change_settings = ShiftChangeSettings.objects.get(organization=organization)
-        return 200, shift_change_settings
+        settings = await sync_to_async(
+            ShiftChangeSettings.objects.select_related("organization").get
+        )(organization=org)
+
+        data = {
+            "organization": {
+                "id": org.id,
+                "name": org.organization_name,
+            },
+            **{field: getattr(settings, field) for field in [
+                "allow_employee_shift_change_request",
+                "enable_manager_approval",
+                "default_approval_status",
+            ]},
+        }
+        return 200, data
+
     except ShiftChangeSettings.DoesNotExist:
         return 404, {"message": "Shift Change Settings not found."}
+
     
-@attendance_settings_api.put("/shift_change_settings", response={200: Message, 404: Message})
+@attendance_settings_api.put("/shift_change_settings", response={200: Message, 403: Message, 404: Message})
 async def update_shift_change_settings(request, data: ShiftChangeSettingsSchema):
+    user = request.auth
+    if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+        return 403, {"message": "Unauthorized access"}
+
     try:
-        shift_change_settings = ShiftChangeSettings.objects.get(organization=data.organization)
+        settings = await sync_to_async(ShiftChangeSettings.objects.get)(organization=user.organization)
         for key, value in data.dict().items():
-            setattr(shift_change_settings, key, value)
-        shift_change_settings.save()
+            setattr(settings, key, value)
+        await sync_to_async(settings.save)()
         return 200, {"message": "Shift Change Settings updated successfully."}
     except ShiftChangeSettings.DoesNotExist:
-        return 404, {"message": "Shift Change Settings not found."} 
-    
+        return 404, {"message": "Shift Change Settings not found."}
+
+################### REGULARIZATION POLICIES ######################
 @attendance_settings_api.post("/regularization_policies", response={201: Message, 403: Message, 409: Message})
-async def regularization_policies(request, data: RegularizationPoliciesSchema):
-    created_by = request.auth
-    if RegularizationPolicies.objects.filter(organization=data.organization).exists():
-        return 409, {"message": "Regularization Policies already exists for this organization"}
-    RegularizationPolicies.objects.create(**data.dict())
+async def create_regularization_policies(request, data: RegularizationPoliciesSchema):
+    user = request.auth
+    if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+        return 403, {"message": "Unauthorized access"}
+
+    org = await sync_to_async(lambda: user.organization)()
+    exists = await sync_to_async(RegularizationPolicies.objects.filter(organization=org).exists)()
+    if exists:
+        return 409, {"message": "Regularization Policies already exist for this organization"}
+
+    await sync_to_async(RegularizationPolicies.objects.create)(organization=org, **data.dict())
     return 201, {"message": "Regularization Policies created successfully."}
 
-@attendance_settings_api.get("/regularization_policies", response={200: RegularizationPoliciesSchema, 404: Message})
-async def get_regularization_policies(request, organization:int):
+@attendance_settings_api.get("/regularization_policies", response={200: RegularizationPoliciesOutSchema, 404: Message})
+async def get_regularization_policies(request):
+    user = request.auth
+    org = await sync_to_async(getattr)(user, "organization")
+    
+    if not org:
+        return 404, {"message": "Organization not found."}
+
     try:
-        regularization_policies = RegularizationPolicies.objects.get(organization=organization)
-        return 200, regularization_policies
+        policies = await sync_to_async(
+            RegularizationPolicies.objects.select_related("organization").get
+        )(organization=org)
+
+        data = {
+            "organization": org.id,  # Only the organization ID
+            **{field: getattr(policies, field) for field in [
+                "enable_justify_punch",
+                "restrict_attendance_justification_days",
+                "enable_request_punch",
+                "enable_multiple_punches",
+                "restrict_punch_request_days",
+                "punch_approval_status",
+                "restrict_duty_punch_employee",
+                "restrict_real_time_justify_employee",
+                "restrict_punch_request_manager",
+                "restrict_attendance_approval_manager",
+                "restrict_late_justify_manager",
+                "restrict_early_exit_justify_manager",
+                "restrict_total_time_justify_manager",
+            ]},
+        }
+        return 200, data
+
     except RegularizationPolicies.DoesNotExist:
         return 404, {"message": "Regularization Policies not found."}
-    
-@attendance_settings_api.put("/regularization_policies", response={200: Message, 404: Message})
+
+@attendance_settings_api.put("/regularization_policies", response={200: Message, 403: Message, 404: Message})
 async def update_regularization_policies(request, data: RegularizationPoliciesSchema):
+    user = request.auth
+    if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+        return 403, {"message": "Unauthorized access"}
+
     try:
-        regularization_policies = RegularizationPolicies.objects.get(organization=data.organization)
+        policies = await sync_to_async(RegularizationPolicies.objects.get)(organization=user.organization)
         for key, value in data.dict().items():
-            setattr(regularization_policies, key, value)
-        regularization_policies.save()
+            setattr(policies, key, value)
+        await sync_to_async(policies.save)()
         return 200, {"message": "Regularization Policies updated successfully."}
     except RegularizationPolicies.DoesNotExist:
         return 404, {"message": "Regularization Policies not found."}
+
+################### SHIFT MANAGEMENT ######################
     
 @attendance_settings_api.post("/manage_shift", response={201: Message, 403: Message, 409: Message})
 async def manage_shift(request, data: ShiftSchema):
