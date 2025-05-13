@@ -2,6 +2,7 @@ from django.shortcuts import render
 from ninja import Router
 from settings.attendance_settings.schema import *
 from settings.attendance_settings.models import *
+from asgiref.sync import sync_to_async
 # Create your views here.
 
 attendance_settings_api = Router(tags=['attendance_settings'])
@@ -9,29 +10,71 @@ attendance_settings_api = Router(tags=['attendance_settings'])
 @attendance_settings_api.post("/attendance_settings", response={201: Message, 403: Message, 409: Message})
 async def create_attendance_settings(request, data: AttendenceSettingSchema):
     user = request.auth
-    if AttendaceSettings.objects.filter(organization=data.organization).exists():
-        return 409, {"message": "Attendance Settings already exists for this organization"}
-    AttendaceSettings.objects.create(**data.dict())
+    if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+        return 403, {"message": "Unauthorized access"}
+
+    org = await sync_to_async(lambda: user.organization)()
+    exists = await sync_to_async(AttendaceSettings.objects.filter(organization=org).exists)()
+    if exists:
+        return 409, {"message": "Attendance Settings already exist for this organization"}
+
+    await sync_to_async(AttendaceSettings.objects.create)(organization=org, **data.dict())
     return 201, {"message": "Attendance Settings created successfully."}
 
-@attendance_settings_api.get("/attendance_settings", response={200: AttendenceSettingSchema, 404: Message})
-async def get_attendance_settings(request, organization:int):
+@attendance_settings_api.get("/attendance_settings", 
+    response={200: AttendenceSettingOutSchema, 404: Message})
+async def get_attendance_settings(request):
+    user = request.auth
+    org = await sync_to_async(getattr)(user, "organization")
+    
+    if not org:
+        return 404, {"message": "Organization not found."}
+
     try:
-        attendance_settings = AttendaceSettings.objects.get(organization=organization)
-        return 200, attendance_settings
+        settings = await sync_to_async(
+            AttendaceSettings.objects.select_related("organization").get
+        )(organization=org)
+
+        data = {
+            "organization": {
+                "id": org.id,
+                "name": org.organization_name,
+            },
+            **{field: getattr(settings, field) for field in [
+                "enable_attendance",
+                "default_attendance_status",
+                "deduct_salary_for_absent_days",
+                "hide_total_hours",
+                "hide_attendance_punches",
+                "disable_web_attendance",
+                "enable_ip_restrictions",
+                "disable_mobile_attendance",
+            ]},
+            "company_start_time": settings.company_start_time.strftime("%H:%M") if settings.company_start_time else None,
+            "company_end_time": settings.company_end_time.strftime("%H:%M") if settings.company_end_time else None,
+        }
+        return 200, data
+
     except AttendaceSettings.DoesNotExist:
         return 404, {"message": "Attendance Settings not found."}
-    
-@attendance_settings_api.put("/attendance_settings", response={200: Message, 404: Message})
+
+
+@attendance_settings_api.put("/attendance_settings", response={200: Message, 403: Message, 404: Message})
 async def update_attendance_settings(request, data: AttendenceSettingSchema):
+    user = request.auth
+    if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+        return 403, {"message": "Unauthorized access"}
+
     try:
-        attendance_settings = AttendaceSettings.objects.get(organization=data.organization)
+        settings = await sync_to_async(AttendaceSettings.objects.get)(organization=user.organization)
         for key, value in data.dict().items():
-            setattr(attendance_settings, key, value)
-        attendance_settings.save()
+            setattr(settings, key, value)
+        await sync_to_async(settings.save)()
         return 200, {"message": "Attendance Settings updated successfully."}
     except AttendaceSettings.DoesNotExist:
         return 404, {"message": "Attendance Settings not found."}
+
+
 
 @attendance_settings_api.post("/roster_shift_settings", response={201: Message, 403: Message, 409: Message})
 async def roster_shift_settings(request, data: RosterShiftSettingsSchema):

@@ -1,6 +1,8 @@
 from datetime import date, datetime, time
 from ninja import Schema
 from typing import *
+
+from pydantic import field_serializer
 from employee.basic_details.schema import *
 
 class organizationDetail(Schema):
@@ -11,7 +13,6 @@ class Message(Schema):
     message: str
 
 class AttendenceSettingSchema(Schema):
-    organization: int
     enable_attendance: bool
     default_attendance_status:Optional[str]
     deduct_salary_for_absent_days: Optional[str]
@@ -22,6 +23,20 @@ class AttendenceSettingSchema(Schema):
     disable_web_attendance: Optional[bool]
     enable_ip_restrictions: Optional[bool]
     disable_mobile_attendance: Optional[bool]
+
+class AttendenceSettingOutSchema(Schema):
+    organization: Optional[organizationDetail]
+    enable_attendance: bool
+    default_attendance_status: Optional[str]
+    deduct_salary_for_absent_days: Optional[str]
+    company_start_time: Optional[str]
+    company_end_time: Optional[str]
+    hide_total_hours: Optional[bool]
+    hide_attendance_punches: Optional[bool]
+    disable_web_attendance: Optional[bool]
+    enable_ip_restrictions: Optional[bool]
+    disable_mobile_attendance: Optional[bool]
+
 
 class RosterShiftSettingsSchema(Schema):
     organization: int
