@@ -264,7 +264,7 @@ async def update_regularization_policies(request, data: RegularizationPoliciesSc
 
 ################### SHIFT MANAGEMENT ######################
     
-@attendance_settings_api.post("/shift", response={201: Message, 403: Message, 409: Message})
+@attendance_settings_api.post("/manage_shift", response={201: Message, 403: Message, 409: Message})
 async def create_shift(request, data: ShiftSchema):
     user = request.auth
     if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
@@ -278,7 +278,7 @@ async def create_shift(request, data: ShiftSchema):
     await sync_to_async(Shift.objects.create)(organization=org, **data.dict())
     return 201, {"message": "Shift created successfully."}
 
-@attendance_settings_api.get("/shift", response={200: ShiftOutSchema, 404: Message})
+@attendance_settings_api.get("/manage_shift", response={200: ShiftOutSchema, 404: Message})
 async def get_shift(request):
     user = request.auth
     org = await sync_to_async(getattr)(user, "organization")
@@ -307,7 +307,7 @@ async def get_shift(request):
         return 404, {"message": "Shift not found."}
 
     
-@attendance_settings_api.put("/shift", response={200: Message, 403: Message, 404: Message})
+@attendance_settings_api.put("/manage_shift", response={200: Message, 403: Message, 404: Message})
 async def update_shift(request, data: ShiftSchema):
     user = request.auth
     if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
