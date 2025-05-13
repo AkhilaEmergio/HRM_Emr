@@ -117,6 +117,14 @@ class ShiftOutSchema(Schema):
 
 
 class CalculationSettingsSchema(Schema):
+    enable_attendance_unit: Optional[bool]
+    number_of_unit_for_absent: Optional[int]
+    deduct_break_hours: Optional[bool]
+    daily_auto_attendance_calculation: Optional[bool]
+    enable_leave_based_rules: Optional[bool]
+    auto_assign_shift_work: Optional[bool]
+
+class CalculationSettingsOutSchema(Schema):
     organization: int
     enable_attendance_unit: Optional[bool]
     number_of_unit_for_absent: Optional[int]
@@ -125,3 +133,130 @@ class CalculationSettingsSchema(Schema):
     enable_leave_based_rules: Optional[bool]
     auto_assign_shift_work: Optional[bool]
 
+class SandwichRulesSettingsSchema(Schema):
+    enable_sandwich_rules: Optional[bool]
+    week_off_holidays_between_absents: Optional[bool]
+    week_off_holidays_after_absent: Optional[bool]
+    week_off_holidays_before_absent: Optional[bool]
+    absent_week_offs_holidays_beginning_month: Optional[bool]
+    absent_week_offs_holidays_end_month: Optional[bool]
+
+class SandwichRulesSettingsOutSchema(Schema):
+    organization: int
+    enable_sandwich_rules: Optional[bool]
+    week_off_holidays_between_absents: Optional[bool]
+    week_off_holidays_after_absent: Optional[bool]
+    week_off_holidays_before_absent: Optional[bool]
+    absent_week_offs_holidays_beginning_month: Optional[bool]
+    absent_week_offs_holidays_end_month: Optional[bool]
+
+class TimeManagementPolicySchema(Schema):
+    enable_overtime: Optional[bool]
+    overtime_approval_status: Optional[str]
+    round_off_minutes: Optional[bool]
+    rounding_method: Optional[str]
+    rounding_value: Optional[int]
+    convert_overtime_to_compensation: Optional[bool]
+    comp_off_request_on_overtime: Optional[bool]
+    default_overtime_rule: Optional[str]
+    enable_undertime: Optional[bool]
+    enable_attendance_rules: Optional[bool]
+
+class TimeManagementPolicyOutSchema(Schema):
+    organization: int
+    enable_overtime: Optional[bool]
+    overtime_approval_status: Optional[str]
+    round_off_minutes: Optional[bool]
+    rounding_method: Optional[str]
+    rounding_value: Optional[int]
+    convert_overtime_to_compensation: Optional[bool]
+    comp_off_request_on_overtime: Optional[bool]
+    default_overtime_rule: Optional[str]
+    enable_undertime: Optional[bool]
+    enable_attendance_rules: Optional[bool]
+
+class WeeklyOffSchema(Schema):
+    weekday: Literal['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    all_weeks: Optional[bool]
+    second_week: Optional[bool]
+    fifth_week: Optional[bool]
+    alternate_weeks: Optional[bool]
+    all_but_last: Optional[bool]
+    third_week: Optional[bool]
+    last_two_weeks: Optional[bool]
+    first_week: Optional[bool]
+    fourth_week: Optional[bool]
+    last_week: Optional[bool]
+
+class WeeklyOffOutSchema(Schema):
+    organization: int
+    weekday: str
+    all_weeks: Optional[bool]
+    second_week: Optional[bool]
+    fifth_week: Optional[bool]
+    alternate_weeks: Optional[bool]
+    all_but_last: Optional[bool]
+    third_week: Optional[bool]
+    last_two_weeks: Optional[bool]
+    first_week: Optional[bool]
+    fourth_week: Optional[bool]
+    last_week: Optional[bool]
+
+
+class AllowedIPSchema(Schema):
+    ip_address: str
+    added_from_ip: Optional[str] = None
+
+class AllowedIPOutSchema(Schema):
+    organization: int
+    ip_address: str
+    addedby: Optional[int]
+    addedon: Optional[datetime]
+    added_from_ip: Optional[str]
+
+class CompensationRulesSchema(Schema):
+    daily_eligiibility: Optional[str]
+    weekoff_eligiibility: Optional[str]
+    holiday_eligiibility: Optional[str]
+    daily_rule: Optional[Dict[str, Any]]
+    weekoff_rule: Optional[Dict[str, Any]]
+    holiday_rule: Optional[Dict[str, Any]]
+
+class CompensationRulesOutSchema(Schema):
+    organization: int
+    daily_eligiibility: Optional[str]
+    weekoff_eligiibility: Optional[str]
+    holiday_eligiibility: Optional[str]
+    daily_rule: Optional[Dict[str, Any]]
+    weekoff_rule: Optional[Dict[str, Any]]
+    holiday_rule: Optional[Dict[str, Any]]
+
+class CompOffRulesSchema(Schema):
+    daily_eligiibility: Optional[str]
+    weekoff_eligiibility: Optional[str]
+    holiday_eligiibility: Optional[str]
+    daily_rule: Optional[Dict[str, Any]]
+    weekoff_rule: Optional[Dict[str, Any]]
+    holiday_rule: Optional[Dict[str, Any]]
+
+class CompOffRulesOutSchema(Schema):
+    organization: int
+    daily_eligiibility: Optional[str]
+    weekoff_eligiibility: Optional[str]
+    holiday_eligiibility: Optional[str]
+    daily_rule: Optional[Dict[str, Any]]
+    weekoff_rule: Optional[Dict[str, Any]]
+    holiday_rule: Optional[Dict[str, Any]]
+
+class UnderTimeRuleSchema(Schema):
+    eligiblity_hours: Optional[int]
+    consider_absent: Optional[bool]
+    conside_half_day: Optional[bool]
+
+class UnderTimeRuleOutSchema(Schema):
+    organization: int
+    eligiblity_hours: Optional[int]
+    consider_absent: Optional[bool]
+    conside_half_day: Optional[bool]
+
+    
