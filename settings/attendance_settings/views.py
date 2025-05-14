@@ -290,22 +290,23 @@ async def get_shift(request):
         shift = await sync_to_async(Shift.objects.get)(organization=org)
 
         data = {
-            "organization": org.id,  # Only the organization ID
-            **{field: getattr(shift, field) for field in [
-                "shift_type",
-                "shift_code",
-                "shift_title",
-                "description",
-                "time_in",
-                "time_out",
-                "make_default_shift",
-            ]},
+            "organization": {
+                "id": org.id,
+                "name": org.organization_name,
+            },
+            "shift_type": shift.shift_type,
+            "shift_code": shift.shift_code,
+            "shift_title": shift.shift_title,
+            "description": shift.description,
+            "timein": shift.timein.strftime("%H:%M") if shift.timein else None,
+            "timeout": shift.timeout.strftime("%H:%M") if shift.timeout else None,
+            "make_default_shift": shift.make_default_shift,
         }
+
         return 200, data
 
     except Shift.DoesNotExist:
         return 404, {"message": "Shift not found."}
-
     
 @attendance_settings_api.put("/manage_shift", response={200: Message, 403: Message, 404: Message})
 async def update_shift(request, data: ShiftSchema):

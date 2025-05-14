@@ -101,8 +101,8 @@ class ShiftSchema(Schema):
     shift_code: Optional[str]
     shift_title:Optional[str]
     description: Optional[str]
-    time_in: Optional[time]
-    time_out: Optional[time]    
+    timein: Optional[str]
+    timeout: Optional[str]    
     make_default_shift: Optional[bool]
 
 class ShiftOutSchema(Schema):
@@ -111,8 +111,8 @@ class ShiftOutSchema(Schema):
     shift_code: Optional[str]
     shift_title:Optional[str]
     description: Optional[str]
-    time_in: Optional[time]
-    time_out: Optional[time]    
+    timein: Optional[str]
+    timeout: Optional[str]    
     make_default_shift: Optional[bool]
 
 
