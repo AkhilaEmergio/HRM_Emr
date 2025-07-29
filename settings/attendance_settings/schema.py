@@ -122,7 +122,7 @@ class CalculationSettingsSchema(Schema):
     deduct_break_hours: Optional[bool]
     daily_auto_attendance_calculation: Optional[bool]
     enable_leave_based_rules: Optional[bool]
-    auto_assign_shift_work: Optional[bool]
+    auto_assign_shift: Optional[bool]
 
 class CalculationSettingsOutSchema(Schema):
     organization: int
@@ -131,7 +131,7 @@ class CalculationSettingsOutSchema(Schema):
     deduct_break_hours: Optional[bool]
     daily_auto_attendance_calculation: Optional[bool]
     enable_leave_based_rules: Optional[bool]
-    auto_assign_shift_work: Optional[bool]
+    auto_assign_shift: Optional[bool]
 
 class SandwichRulesSettingsSchema(Schema):
     enable_sandwich_rules: Optional[bool]

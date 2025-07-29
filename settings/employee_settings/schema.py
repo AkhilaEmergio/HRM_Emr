@@ -53,8 +53,6 @@ class DocumentSettingSchema(Schema):
     issue_date: bool
     updated_by_id: int
 
-
-
 class DocumentSettingInputSchema(Schema):
     title: str
     module: str

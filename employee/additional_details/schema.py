@@ -46,3 +46,19 @@ class JobhistorySchema(Schema):
     reason:Optional[str]=None
     document:Optional[str]=None
 
+class ReferencesSchema(Schema):
+    id: Optional[int]
+    name: str
+    job_title: Optional[str]
+    company: Optional[str]
+    email: str
+    mobile_no: str
+    
+class BankSchema(Schema):
+    id: Optional[int]
+    name_of_bank: str
+    account_no: str
+    ifsc: str
+    branch: Optional[str]
+    account_type: str
+
