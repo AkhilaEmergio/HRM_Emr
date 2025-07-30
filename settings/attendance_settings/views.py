@@ -358,7 +358,7 @@ async def get_calculation_settings(request):
                 "deduct_break_hours",
                 "daily_auto_attendance_calculation",
                 "enable_leave_based_rules",
-                "auto_assign_shift_work",
+                "auto_assign_shift",
             ]}
         }
         return 200, data
