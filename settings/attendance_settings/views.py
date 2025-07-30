@@ -519,8 +519,9 @@ async def get_weekly_off(request):
         return 404, {"message": "Organization not found."}
 
     weekly_offs = await sync_to_async(list)(
-        WeeklyOff.objects.filter(organization=org).all()
+    WeeklyOff.objects.select_related("organization").filter(organization=org).all() 
     )
+
 
     data = [
         WeeklyOffOutSchema(
