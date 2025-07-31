@@ -64,22 +64,15 @@ class ShiftChangeSettingsOutSchema(Schema):
     enable_manager_approval: Optional[bool]
     default_approval_status: Optional[str]
 
-class RegularizationPoliciesSchema(Schema):
+class GeneralPolicySchema(Schema):
     enable_justify_punch: Optional[bool]
     restrict_attendance_justification_days: Optional[int]
     enable_request_punch: Optional[bool]
     enable_multiple_punches: Optional[bool]
     restrict_punch_request_days: Optional[int]
     punch_approval_status: Optional[str]
-    restrict_duty_punch_employee: Optional[int]
-    restrict_real_time_justify_employee: Optional[int]
-    restrict_punch_request_manager: Optional[int]
-    restrict_attendance_approval_manager: Optional[int]
-    restrict_late_justify_manager: Optional[int]
-    restrict_early_exit_justify_manager: Optional[int]
-    restrict_total_time_justify_manager: Optional[int]
 
-class RegularizationPoliciesOutSchema(Schema):
+class GeneralPolicyOutSchema(Schema):
     organization: Optional[organizationDetail]
     enable_justify_punch: Optional[bool]
     restrict_attendance_justification_days: Optional[int]
@@ -87,12 +80,53 @@ class RegularizationPoliciesOutSchema(Schema):
     enable_multiple_punches: Optional[bool]
     restrict_punch_request_days: Optional[int]
     punch_approval_status: Optional[str]
+
+class AttendanceRestrictionPolicySchema(Schema):
+    # Employee Attendance Restrictions
+    enable_duty_punch_employee: Optional[bool]
     restrict_duty_punch_employee: Optional[int]
+
+    enable_real_time_justify_employee: Optional[bool]
     restrict_real_time_justify_employee: Optional[int]
+
+    # Manager Attendance Restrictions
+    enable_punch_request_manager: Optional[bool]
     restrict_punch_request_manager: Optional[int]
+
+    enable_attendance_approval_manager: Optional[bool]
     restrict_attendance_approval_manager: Optional[int]
+
+    enable_late_justify_manager: Optional[bool]
     restrict_late_justify_manager: Optional[int]
+
+    enable_early_exit_justify_manager: Optional[bool]
     restrict_early_exit_justify_manager: Optional[int]
+
+    enable_total_time_justify_manager: Optional[bool]
+    restrict_total_time_justify_manager: Optional[int]
+
+class AttendanceRestrictionPolicyOutSchema(Schema):
+    # Employee Attendance Restrictions
+    enable_duty_punch_employee: Optional[bool]
+    restrict_duty_punch_employee: Optional[int]
+
+    enable_real_time_justify_employee: Optional[bool]
+    restrict_real_time_justify_employee: Optional[int]
+
+    # Manager Attendance Restrictions
+    enable_punch_request_manager: Optional[bool]
+    restrict_punch_request_manager: Optional[int]
+
+    enable_attendance_approval_manager: Optional[bool]
+    restrict_attendance_approval_manager: Optional[int]
+
+    enable_late_justify_manager: Optional[bool]
+    restrict_late_justify_manager: Optional[int]
+
+    enable_early_exit_justify_manager: Optional[bool]
+    restrict_early_exit_justify_manager: Optional[int]
+
+    enable_total_time_justify_manager: Optional[bool]
     restrict_total_time_justify_manager: Optional[int]
 
 

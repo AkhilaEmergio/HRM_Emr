@@ -64,26 +64,52 @@ class RegularizationPolicies(models.Model):
         ("Manager Approved", "Manager Approved"),
         ("Approved", "Approved"),
     ]
-    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
+
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True)
+
+    # General Settings
     enable_justify_punch = models.BooleanField(default=False, null=True)
     restrict_attendance_justification_days = models.IntegerField(default=0, null=True)
     enable_request_punch = models.BooleanField(default=False, null=True)
     enable_multiple_punches = models.BooleanField(default=False, null=True)
     restrict_punch_request_days = models.IntegerField(default=0, null=True)
-    punch_approval_status = models.CharField(max_length=20, choices=PUNCH_APPROVAL_CHOICES, default="Manager Approved",null=True)
-    # Restrictions for Employee Attendance Actions
+    punch_approval_status = models.CharField(
+        max_length=20, choices=PUNCH_APPROVAL_CHOICES, default="Manager Approved", null=True
+    )
+
+    # Employee Attendance Restrictions (Enable + Restrict)
+    enable_duty_punch_employee = models.BooleanField(default=False, null=True)
     restrict_duty_punch_employee = models.IntegerField(default=0, null=True)
+
+    enable_real_time_justify_employee = models.BooleanField(default=False, null=True)
     restrict_real_time_justify_employee = models.IntegerField(default=0, null=True)
-    # Restrictions for Manager Attendance Actions
+
+    # Manager Attendance Restrictions (Enable + Restrict)
+    enable_punch_request_manager = models.BooleanField(default=False, null=True)
     restrict_punch_request_manager = models.IntegerField(default=0, null=True)
+
+    enable_attendance_approval_manager = models.BooleanField(default=False, null=True)
     restrict_attendance_approval_manager = models.IntegerField(default=0, null=True)
+
+    enable_late_justify_manager = models.BooleanField(default=False, null=True)
     restrict_late_justify_manager = models.IntegerField(default=0, null=True)
+
+    enable_early_exit_justify_manager = models.BooleanField(default=False, null=True)
     restrict_early_exit_justify_manager = models.IntegerField(default=0, null=True)
+
+    enable_total_time_justify_manager = models.BooleanField(default=False, null=True)
     restrict_total_time_justify_manager = models.IntegerField(default=0, null=True)
-    created_by = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='regularization_created_by')
-    created_on = models.DateTimeField(auto_now_add=True,null=True)
-    updated_by = models.ForeignKey(UserProfile,on_delete=models.CASCADE,null=True,blank=True,related_name='regularization_updated_by')
-    updated_on = models.DateTimeField(auto_now=True,null=True)
+
+    # Metadata
+    created_by = models.ForeignKey(
+        UserProfile, on_delete=models.CASCADE, null=True, blank=True, related_name='regularization_created_by'
+    )
+    created_on = models.DateTimeField(auto_now_add=True, null=True)
+    updated_by = models.ForeignKey(
+        UserProfile, on_delete=models.CASCADE, null=True, blank=True, related_name='regularization_updated_by'
+    )
+    updated_on = models.DateTimeField(auto_now=True, null=True)
+
 
 class TimeManagementPolicy(models.Model):
     OVERTIME_APPROVAL_CHOICES = [

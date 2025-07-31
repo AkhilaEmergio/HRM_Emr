@@ -197,70 +197,168 @@ async def update_shift_change_settings(request, data: ShiftChangeSettingsSchema)
         return 404, {"message": "Shift Change Settings not found."}
 
 ################### REGULARIZATION POLICIES ######################
-@attendance_settings_api.post("/regularization_policies", response={201: Message, 403: Message, 409: Message})
-async def create_regularization_policies(request, data: RegularizationPoliciesSchema):
+# @attendance_settings_api.post("/regularization_policies", response={201: Message, 403: Message, 409: Message})
+# async def create_regularization_policies(request, data: RegularizationPoliciesSchema):
+#     user = request.auth
+#     if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+#         return 403, {"message": "Unauthorized access"}
+
+#     org = await sync_to_async(lambda: user.organization)()
+#     exists = await sync_to_async(RegularizationPolicies.objects.filter(organization=org).exists)()
+#     if exists:
+#         return 409, {"message": "Regularization Policies already exist for this organization"}
+
+#     await sync_to_async(RegularizationPolicies.objects.create)(organization=org, **data.dict())
+#     return 201, {"message": "Regularization Policies created successfully."}
+
+# @attendance_settings_api.get("/regularization_policies", response={200: RegularizationPoliciesOutSchema, 404: Message})
+# async def get_regularization_policies(request):
+#     user = request.auth
+#     org = await sync_to_async(getattr)(user, "organization")
+    
+#     if not org:
+#         return 404, {"message": "Organization not found."}
+
+#     try:
+#         policies = await sync_to_async(
+#             RegularizationPolicies.objects.select_related("organization").get
+#         )(organization=org)
+
+#         data = {
+#             "organization": org.id,  # Only the organization ID
+#             **{field: getattr(policies, field) for field in [
+#                 "enable_justify_punch",
+#                 "restrict_attendance_justification_days",
+#                 "enable_request_punch",
+#                 "enable_multiple_punches",
+#                 "restrict_punch_request_days",
+#                 "punch_approval_status",
+#                 "restrict_duty_punch_employee",
+#                 "restrict_real_time_justify_employee",
+#                 "restrict_punch_request_manager",
+#                 "restrict_attendance_approval_manager",
+#                 "restrict_late_justify_manager",
+#                 "restrict_early_exit_justify_manager",
+#                 "restrict_total_time_justify_manager",
+#             ]},
+#         }
+#         return 200, data
+
+#     except RegularizationPolicies.DoesNotExist:
+#         return 404, {"message": "Regularization Policies not found."}
+
+# @attendance_settings_api.put("/regularization_policies", response={200: Message, 403: Message, 404: Message})
+# async def update_regularization_policies(request, data: RegularizationPoliciesSchema):
+#     user = request.auth
+#     if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+#         return 403, {"message": "Unauthorized access"}
+
+#     try:
+#         policies = await sync_to_async(RegularizationPolicies.objects.get)(organization=user.organization)
+#         for key, value in data.dict().items():
+#             setattr(policies, key, value)
+#         await sync_to_async(policies.save)()
+#         return 200, {"message": "Regularization Policies updated successfully."}
+#     except RegularizationPolicies.DoesNotExist:
+#         return 404, {"message": "Regularization Policies not found."}
+
+@attendance_settings_api.put("/general_policy", response={200: Message, 403: Message})
+async def update_or_create_general_policy(request, data: GeneralPolicySchema):
     user = request.auth
-    if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+    if not user or not await sync_to_async(lambda: user.role == "admin" and user.organization)():
         return 403, {"message": "Unauthorized access"}
 
     org = await sync_to_async(lambda: user.organization)()
-    exists = await sync_to_async(RegularizationPolicies.objects.filter(organization=org).exists)()
-    if exists:
-        return 409, {"message": "Regularization Policies already exist for this organization"}
 
-    await sync_to_async(RegularizationPolicies.objects.create)(organization=org, **data.dict())
-    return 201, {"message": "Regularization Policies created successfully."}
+    policy, created = await sync_to_async(
+        lambda: RegularizationPolicies.objects.get_or_create(organization=org)
+    )()
 
-@attendance_settings_api.get("/regularization_policies", response={200: RegularizationPoliciesOutSchema, 404: Message})
-async def get_regularization_policies(request):
+    # Update only the general fields
+    for key, value in data.dict().items():
+        setattr(policy, key, value)
+
+    await sync_to_async(policy.save)()
+    msg = "created" if created else "updated"
+    return 200, {"message": f"General policy {msg} successfully."}
+
+    
+@attendance_settings_api.get("/general_policy", response={200: GeneralPolicyOutSchema, 404: Message})
+async def get_general_policy(request):
     user = request.auth
     org = await sync_to_async(getattr)(user, "organization")
-    
     if not org:
         return 404, {"message": "Organization not found."}
-
+    
     try:
-        policies = await sync_to_async(
-            RegularizationPolicies.objects.select_related("organization").get
-        )(organization=org)
-
-        data = {
-            "organization": org.id,  # Only the organization ID
-            **{field: getattr(policies, field) for field in [
-                "enable_justify_punch",
-                "restrict_attendance_justification_days",
-                "enable_request_punch",
-                "enable_multiple_punches",
-                "restrict_punch_request_days",
-                "punch_approval_status",
-                "restrict_duty_punch_employee",
-                "restrict_real_time_justify_employee",
-                "restrict_punch_request_manager",
-                "restrict_attendance_approval_manager",
-                "restrict_late_justify_manager",
-                "restrict_early_exit_justify_manager",
-                "restrict_total_time_justify_manager",
-            ]},
+        policy = await sync_to_async(RegularizationPolicies.objects.get)(organization=org)
+        return 200, {
+            "organization": {
+                "id": org.id,
+                "name": org.organization_name,
+            },
+            "enable_justify_punch": policy.enable_justify_punch,
+            "restrict_attendance_justification_days": policy.restrict_attendance_justification_days,
+            "enable_request_punch": policy.enable_request_punch,
+            "enable_multiple_punches": policy.enable_multiple_punches,
+            "restrict_punch_request_days": policy.restrict_punch_request_days,
+            "punch_approval_status": policy.punch_approval_status,
         }
-        return 200, data
-
     except RegularizationPolicies.DoesNotExist:
-        return 404, {"message": "Regularization Policies not found."}
+        return 404, {"message": "Policy not found."}
+    
 
-@attendance_settings_api.put("/regularization_policies", response={200: Message, 403: Message, 404: Message})
-async def update_regularization_policies(request, data: RegularizationPoliciesSchema):
+@attendance_settings_api.put("/attendance_restriction_policy", response={200: Message, 403: Message})
+async def update_or_create_attendance_restriction_policy(request, data: AttendanceRestrictionPolicySchema):
     user = request.auth
-    if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
+    if not user or not await sync_to_async(lambda: user.role == "admin" and user.organization)():
         return 403, {"message": "Unauthorized access"}
 
+    org = await sync_to_async(lambda: user.organization)()
+
+    policy, created = await sync_to_async(
+        lambda: RegularizationPolicies.objects.get_or_create(organization=org)
+    )()
+
+    # Update only the attendance restriction fields
+    for key, value in data.dict().items():
+        setattr(policy, key, value)
+
+    await sync_to_async(policy.save)()
+    msg = "created" if created else "updated"
+    return 200, {"message": f"Attendance restriction policy {msg} successfully."}
+
+@attendance_settings_api.get("/attendance_restriction_policy", response={200: AttendanceRestrictionPolicyOutSchema, 404: Message})
+async def get_attendance_restriction_policy(request):
+    user = request.auth
+    org = await sync_to_async(getattr)(user, "organization")
+    if not org:
+        return 404, {"message": "Organization not found."}
+    
     try:
-        policies = await sync_to_async(RegularizationPolicies.objects.get)(organization=user.organization)
-        for key, value in data.dict().items():
-            setattr(policies, key, value)
-        await sync_to_async(policies.save)()
-        return 200, {"message": "Regularization Policies updated successfully."}
+        policy = await sync_to_async(RegularizationPolicies.objects.get)(organization=org)
+        return 200, {
+            "organization": {
+                "id": org.id,
+                "name": org.organization_name,
+            },
+            "enable_duty_punch_employee": policy.enable_duty_punch_employee,
+            "restrict_duty_punch_employee": policy.restrict_duty_punch_employee,
+            "enable_real_time_justify_employee": policy.enable_real_time_justify_employee,
+            "restrict_real_time_justify_employee": policy.restrict_real_time_justify_employee,
+            "enable_punch_request_manager": policy.enable_punch_request_manager,
+            "restrict_punch_request_manager": policy.restrict_punch_request_manager,
+            "enable_attendance_approval_manager": policy.enable_attendance_approval_manager,
+            "restrict_attendance_approval_manager": policy.restrict_attendance_approval_manager,
+            "enable_late_justify_manager": policy.enable_late_justify_manager,
+            "restrict_late_justify_manager": policy.restrict_late_justify_manager,
+            "enable_early_exit_justify_manager": policy.enable_early_exit_justify_manager,
+            "restrict_early_exit_justify_manager": policy.restrict_early_exit_justify_manager,
+            "enable_total_time_justify_manager": policy.enable_total_time_justify_manager,
+            "restrict_total_time_justify_manager": policy.restrict_total_time_justify_manager,
+        }
     except RegularizationPolicies.DoesNotExist:
-        return 404, {"message": "Regularization Policies not found."}
+        return 404, {"message": "Policy not found."}
 
 ################### SHIFT MANAGEMENT ######################
     
