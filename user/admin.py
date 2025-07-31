@@ -5,3 +5,4 @@ from  user.models import *
 
 admin.site.register(UserProfile)
 admin.site.register(Organization)
+

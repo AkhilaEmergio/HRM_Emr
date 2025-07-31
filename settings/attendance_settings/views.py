@@ -3,6 +3,7 @@ from ninja import Router
 from settings.attendance_settings.schema import *
 from settings.attendance_settings.models import *
 from asgiref.sync import sync_to_async
+from typing import List
 # Create your views here.
 
 attendance_settings_api = Router(tags=['attendance_settings'])
@@ -376,7 +377,7 @@ async def create_shift(request, data: ShiftSchema):
     await sync_to_async(Shift.objects.create)(organization=org, **data.dict())
     return 201, {"message": "Shift created successfully."}
 
-@attendance_settings_api.get("/manage_shift", response={200: ShiftOutSchema, 404: Message})
+@attendance_settings_api.get("/manage_shift", response={200: List[ShiftOutSchema], 404: Message})
 async def get_shift(request):
     user = request.auth
     org = await sync_to_async(getattr)(user, "organization")
@@ -385,9 +386,9 @@ async def get_shift(request):
         return 404, {"message": "Organization not found."}
 
     try:
-        shift = await sync_to_async(Shift.objects.get)(organization=org)
+        shifts = await sync_to_async(list)(Shift.objects.filter(organization=org))
 
-        data = {
+        data = [{
             "organization": {
                 "id": org.id,
                 "name": org.organization_name,
@@ -399,7 +400,8 @@ async def get_shift(request):
             "timein": shift.timein.strftime("%H:%M") if shift.timein else None,
             "timeout": shift.timeout.strftime("%H:%M") if shift.timeout else None,
             "make_default_shift": shift.make_default_shift,
-        }
+        } for shift in shifts
+        ]
 
         return 200, data
 
