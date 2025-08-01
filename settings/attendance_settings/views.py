@@ -393,6 +393,7 @@ async def get_shift(request):
                 "id": org.id,
                 "name": org.organization_name,
             },
+            "id": shift.id,
             "shift_type": shift.shift_type,
             "shift_code": shift.shift_code,
             "shift_title": shift.shift_title,

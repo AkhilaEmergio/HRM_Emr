@@ -141,6 +141,7 @@ class ShiftSchema(Schema):
 
 class ShiftOutSchema(Schema):
     organization: Optional[organizationDetail]
+    id: Optional[int]
     shift_type: Optional[str]
     shift_code: Optional[str]
     shift_title:Optional[str]
