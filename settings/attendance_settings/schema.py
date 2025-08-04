@@ -131,6 +131,7 @@ class AttendanceRestrictionPolicyOutSchema(Schema):
 
 
 class ShiftSchema(Schema):
+    id: Optional[int] 
     shift_type: Optional[str]
     shift_code: Optional[str]
     shift_title:Optional[str]

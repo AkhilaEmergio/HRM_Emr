@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from user.models import Organization
 
 User = get_user_model()
 
@@ -19,6 +20,8 @@ class EmployeeProfileSettings(models.Model):
         "employment_type": False, "service_status": False})
     mandatory_inputable_fields = models.JSONField(default={"job_history": False, "education_details": False, "family_details": False,
         "bank_details": False, "documents": False, "emergency_contact": False, "certifications": False, "profile_image":False})
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="employee_profile_updated_by")
 
 class DocumentSetting(models.Model):
     title = models.CharField(max_length=50)
@@ -31,3 +34,4 @@ class DocumentSetting(models.Model):
     identification = models.BooleanField()
     issue_date = models.BooleanField()
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="updated_by")
+    organization=models.ForeignKey(Organization,on_delete=models.CASCADE,null=True)

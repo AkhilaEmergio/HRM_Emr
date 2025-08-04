@@ -7,27 +7,35 @@ from settings.general_settings.schema import *
 class Message(Schema):
     message: str
 
+class UserDetail(Schema):
+    id: int
+    name: str
+    
+class organizationDetail(Schema):
+     id:int
+     name:str
+
 # Schemas for EmployeeProfileSettings
 class EmployeeProfileSettingsSchema(Schema):
-    id: int
-    manage_employee_profile: str
-    unique_fields: Dict
-    employee_skills: str
-    custom_skills: Optional[Dict]
-    approve_required: bool
-    employees_addable: bool
-    filter_search: bool
-    generally_showable_fields: Dict
-    officially_showable_fields: Dict
-    contacts_showable_fields: Dict
-    other_showable_fields: Dict
-    mandatory_inputable_fields: Dict
-    updated_by: UserDetail
-
+    organization: Optional[organizationDetail] = None
+    manage_employee_profile: Optional[str] = None
+    unique_fields: Optional[Dict] = None
+    employee_skills: Optional[str] = None
+    custom_skills: Optional[Dict] = None
+    approve_required: Optional[bool] = None
+    employees_addable: Optional[bool] = None
+    filter_search: Optional[bool] = None
+    generally_showable_fields: Optional[Dict] = None
+    officially_showable_fields: Optional[Dict] = None
+    contacts_showable_fields: Optional[Dict] = None
+    other_showable_fields: Optional[Dict] = None
+    mandatory_inputable_fields: Optional[Dict] = None
+    updated_by: Optional[UserDetail] = None
 
 class EmployeeProfileSettingsInputSchema(Schema):
-    manage_employee_profile: str
-    unique_fields: Dict
+
+    manage_employee_profile: Optional[str] = None
+    unique_fields:Optional[Dict]
     employee_skills: str
     custom_skills: Optional[Dict]
     approve_required: bool
@@ -41,7 +49,7 @@ class EmployeeProfileSettingsInputSchema(Schema):
 
 # Schemas for DocumentSetting
 class DocumentSettingSchema(Schema):
-    id: int
+    organization: Optional[organizationDetail] = None
     title: str
     module: str
     description: str

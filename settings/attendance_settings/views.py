@@ -412,17 +412,23 @@ async def get_shift(request):
 @attendance_settings_api.put("/manage_shift", response={200: Message, 403: Message, 404: Message})
 async def update_shift(request, data: ShiftSchema):
     user = request.auth
+
     if not user or not await sync_to_async(lambda: user.role == 'admin' and user.organization)():
         return 403, {"message": "Unauthorized access"}
 
     try:
-        shift = await sync_to_async(Shift.objects.get)(organization=user.organization, shift_code=data.shift_code)
+        shift = await sync_to_async(Shift.objects.get)(id=data.id, organization=user.organization)
+
         for key, value in data.dict().items():
-            setattr(shift, key, value)
+            if value is not None and key != "id":  # Don't update id field
+                setattr(shift, key, value)
+
         await sync_to_async(shift.save)()
         return 200, {"message": "Shift updated successfully."}
+
     except Shift.DoesNotExist:
         return 404, {"message": "Shift not found."}
+
 
 ################### CALCULATION SETTINGS ######################
 
