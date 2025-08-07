@@ -11,6 +11,7 @@ class UserDetail(Schema):
     email:str
     phone:str
     role:str
+    
 class Users(Schema):
     id: int
     name:str

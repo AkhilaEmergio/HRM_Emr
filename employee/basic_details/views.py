@@ -12,6 +12,8 @@ from ninja_jwt.authentication import AsyncJWTAuth
 from asgiref.sync import sync_to_async
 from ninja_jwt.tokens import RefreshToken, AccessToken
 from ninja_jwt.tokens import RefreshToken
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from ninja.errors import HttpError
 
 employee_basic_api = Router(tags=['employee_basic'])
@@ -75,8 +77,25 @@ async def create_employee(request, data: EmployeeInputSchema):
 
             # Create an Employee object using the remaining fields
             employee = await sync_to_async(Employee.objects.create)(user=user_obj, created_by=user, reporting_manager=reporting_manager, business_unit=business_unit, department=department, designation=designation, **employee_data)
-
-            return 201, EmployeeSchema.from_orm(employee)
+            if data.send_mail:
+                subject = "Welcome to the Company"
+                html_message = await sync_to_async(render_to_string)(
+                    "emails/welcome_email.html",
+                    {
+                        "name": data.name,
+                        "username": data.username,
+                        "password": data.password
+                    }
+                )
+                await sync_to_async(send_mail)(
+                    subject,
+                    "",  # Plain text fallback
+                    "noreply@yourcompany.com",
+                    [data.email],
+                    fail_silently=False,
+                    html_message=html_message
+                )
+            return 201, await sync_to_async(EmployeeSchema.from_orm)(employee)
 
         except Exception as e:
             return 400, {"message": str(e)}

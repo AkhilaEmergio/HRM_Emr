@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome Email</title>
+</head>
+<body style="font-family: Arial, sans-serif; padding: 20px;">
+    <h2 style="color: #2e6c80;">Welcome, {{ name }}!</h2>
+    <p>Your employee account has been <strong>successfully created</strong>.</p>
+
+    <h3>Login Credentials:</h3>
+    <ul style="line-height: 1.6;">
+        <li><strong>Username:</strong> {{ username }}</li>
+        <li><strong>Password:</strong> {{ password }}</li>
+    </ul>
+
+    <p>Please log in and change your password as soon as possible.</p>
+    <br>
+    <p>Best regards,<br>HR Team</p>
+</body>
+</html>
