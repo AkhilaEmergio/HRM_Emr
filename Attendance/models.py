@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
-from datetime import timedelta
+from datetime import timedelta,datetime,date
 
 from user.models import Organization
 from employee.basic_details.models import Employee
@@ -37,35 +37,42 @@ class AttendanceDailyRecord(models.Model):
 
     def calculate_status(self):
         punches = self.time_punches.all().order_by('in_time')
+
         if not punches.exists():
-            # Check if it's a weekend
+            # Weekend check
             if self.date.weekday() >= 5:
                 self.status = 'weekend'
             else:
                 self.status = 'absent'
             self.save()
             return
-        
-        first_punch = punches.first()
-        last_punch = punches.last()
-        
-        # Calculate total time for the day
-        total_seconds = sum(
-            (punch.out_time - punch.in_time).total_seconds() 
-            for punch in punches 
-            if punch.in_time and punch.out_time
-        )
-        
-        # Determine status based on company rules
+
+        total_seconds = 0
+        for punch in punches:
+            if punch.in_time and punch.out_time:
+                # Combine with the attendance date to make full datetime
+                in_dt = datetime.combine(self.date, punch.in_time)
+                out_dt = datetime.combine(self.date, punch.out_time)
+
+                # Handle cases where out_time might be past midnight
+                if out_dt < in_dt:
+                    out_dt += timedelta(days=1)
+
+                total_seconds += (out_dt - in_dt).total_seconds()
+
+        first_punch_time = punches.first().in_time
+        last_punch_time = punches.last().out_time
+
+        # Status logic
         if total_seconds < 18000:  # Less than 5 hours
             self.status = 'half_day'
-        elif first_punch.in_time > timezone.datetime.strptime('09:30:00', '%H:%M:%S').time():
+        elif first_punch_time > datetime.strptime('09:30:00', '%H:%M:%S').time():
             self.status = 'late'
-        elif last_punch.out_time and last_punch.out_time < timezone.datetime.strptime('18:00:00', '%H:%M:%S').time():
+        elif last_punch_time and last_punch_time < datetime.strptime('18:00:00', '%H:%M:%S').time():
             self.status = 'early_left'
         else:
             self.status = 'present'
-        
+
         self.save()
 
 class AttendanceTimePunch(models.Model):

@@ -37,10 +37,16 @@ class JustificationStatus(str, Enum):
     approved = "approved"
     rejected = "rejected"
 
+class TimePunchSchema(Schema):
+    in_time: str
+    out_time: str | None
+    duration: str | None
+
+
 class DailyAttendanceResponse(Schema):
     date: date
     day_name: str
-    punches: List[PunchRecord]
+    punches: List[TimePunchSchema]
     total_time: str
     status: AttendanceStatus
     is_justified: bool

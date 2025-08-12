@@ -5,13 +5,24 @@ from django.utils.timezone import localtime
 from employee.basic_details.models import Employee
 from Attendance.models import AttendanceDailyRecord, AttendanceTimePunch, Holiday
 
-async def format_duration(duration: timedelta) -> str:
+from datetime import timedelta
+
+async def format_duration(duration) -> str:
     if not duration:
         return "00:00"
-    total_seconds = int(duration.total_seconds())
+
+    # Handle both timedelta and numeric seconds
+    if isinstance(duration, (float, int)):
+        total_seconds = int(duration)
+    elif isinstance(duration, timedelta):
+        total_seconds = int(duration.total_seconds())
+    else:
+        raise TypeError(f"Unsupported duration type: {type(duration)}")
+
     hours = total_seconds // 3600
     minutes = (total_seconds % 3600) // 60
     return f"{hours:02d}:{minutes:02d}"
+
 
 async def calculate_week_range(target_date: date) -> tuple[date, date]:
     start = target_date - timedelta(days=target_date.weekday())
