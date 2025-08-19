@@ -221,3 +221,203 @@ async def get_attendance_summary(request, month: int = None, year: int = None):
         
     except Exception as e:
         return 400, {"message": str(e)}
+
+@attendance_api.get("/last-punch", auth=AsyncJWTAuth())
+async def get_last_punch(request):
+    """Get the last punch time (out_time if exists else in_time)"""
+    user = request.auth
+    if not user:
+        return 400, {"message": "Employee not found"}
+    
+    # FIX: use employee_id instead of employee=user.id (if FK)
+    record = await AttendanceDailyRecord.objects.filter(
+        employee_id=user.id,   # 🔥 changed this line
+        date=date.today()
+    ).afirst()
+
+    if not record:
+        return 200, {"last_punch_time": None, "message": "No punches today"}
+
+    # Get last punch ordered by ID (latest created)
+    last_punch = await record.time_punches.all().order_by("-id").afirst()
+
+    if not last_punch:
+        return 200, {"last_punch_time": None, "message": "No punches today"}
+
+    # Decide whether to return out_time or in_time
+    punch_time = (
+        last_punch.out_time.strftime("%H:%M:%S")
+        if last_punch.out_time
+        else last_punch.in_time.strftime("%H:%M:%S") if last_punch.in_time else None
+    )
+
+    return 200, {
+        "last_punch_time": punch_time,
+        "type": "OUT" if last_punch.out_time else "IN"
+    }
+
+
+# @attendance_api.get("/all", auth=AsyncJWTAuth())
+# async def get_all_attendance(request):
+    """Get all attendance records for the logged-in user"""
+    user = request.auth
+    if not user:
+        return 400, {"message": "Employee not found"}
+
+    # Fetch all attendance records
+    records = await AttendanceDailyRecord.objects.filter(
+        employee_id=user.id
+    ).aprefetch_related("time_punches").aall()
+
+    attendances = []
+    for record in records:
+        punches = []
+        async for punch in record.time_punches.all():
+            punches.append({
+                "id": punch.id,
+                "in_time": punch.in_time.strftime("%H:%M:%S") if punch.in_time else None,
+                "out_time": punch.out_time.strftime("%H:%M:%S") if punch.out_time else None,
+                "duration": str(punch.duration) if punch.duration else None,
+                "is_manual": punch.is_manual,
+                "device_info": punch.device_info,
+            })
+
+        attendances.append({
+            "date": str(record.date),
+            "day_name": record.date.strftime("%A"),
+            "punches": punches,
+            "total_time": str(record.total_working_hours or "00:00"),
+            "status": record.status,
+            "is_justified": record.is_justified,
+            "is_holiday": record.is_holiday,
+            "holiday_name": record.holiday_name,
+        })
+
+    return 200, {
+        "employee_id": user.id,
+        "employee_name": user.get_full_name() if hasattr(user, "get_full_name") else str(user),
+        "attendances": attendances
+    }
+
+
+@attendance_api.get("/all_attendance", response=Dict[str, Any])
+async def get_all_attendance(request, start_date: str = None, end_date: str = None):
+    employee = await get_employee_from_user(request.auth)
+
+    # Parse dates if provided, otherwise fetch all
+    if start_date:
+        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+    if end_date:
+        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+    # ✅ all ORM queries inside sync function
+    def fetch_records():
+        qs = AttendanceDailyRecord.objects.filter(employee=employee)
+        if start_date and end_date:
+            qs = qs.filter(date__range=(start_date, end_date))
+        qs = qs.order_by("-date").prefetch_related("time_punches")
+
+        records = []
+        for record in qs:
+            punches = list(record.time_punches.all().order_by("in_time"))
+            records.append((record, punches))
+        return records
+
+    records = await sync_to_async(fetch_records)()
+
+    # ✅ Now only pure Python logic in async land
+    result = []
+    for record, punches in records:
+        total_seconds = 0
+        for p in punches:
+            if p.in_time and p.out_time:
+                start_dt = datetime.combine(record.date, p.in_time)
+                end_dt = datetime.combine(record.date, p.out_time)
+                total_seconds += (end_dt - start_dt).total_seconds()
+
+        result.append({
+            "date": record.date,
+            "day_name": record.date.strftime('%A'),
+            "punches": [
+                {
+                    "id": p.id,
+                    "in_time": p.in_time.strftime('%H:%M:%S') if p.in_time else None,
+                    "out_time": p.out_time.strftime('%H:%M:%S') if p.out_time else None,
+                    "duration": await format_duration(
+                        (datetime.combine(record.date, p.out_time) - datetime.combine(record.date, p.in_time)).total_seconds()
+                    ) if p.in_time and p.out_time else None,
+                    "is_manual": p.is_manual,
+                    "device_info": p.device_info
+                }
+                for p in punches
+            ],
+            "total_time": await format_duration(total_seconds),
+            "status": record.status,
+            "is_justified": record.is_justified
+        })
+
+    return {
+        "employee": employee.id,
+        "start_date": start_date,
+        "end_date": end_date,
+        "attendances": result
+    }
+
+@attendance_api.get("/all", response=Dict[str, Any])
+async def get_logged_user_attendance(request, start_date: str = None, end_date: str = None):
+    employee = await get_employee_from_user(request.auth)
+
+    if start_date:
+        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+    if end_date:
+        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+    # ✅ Do ALL ORM inside sync function
+    def fetch_records():
+        qs = AttendanceDailyRecord.objects.filter(employee=employee)
+        if start_date and end_date:
+            qs = qs.filter(date__range=(start_date, end_date))
+        qs = qs.order_by("-date").prefetch_related("time_punches")
+
+        records = []
+        for record in qs:
+            punches = list(record.time_punches.all().order_by("in_time"))
+
+            total_seconds = 0
+            punches_data = []
+            for p in punches:
+                if p.in_time and p.out_time:
+                    start_dt = datetime.combine(record.date, p.in_time)
+                    end_dt = datetime.combine(record.date, p.out_time)
+                    duration = (end_dt - start_dt).total_seconds()
+                    total_seconds += duration
+                else:
+                    duration = None
+
+                punches_data.append({
+                    "id": p.id,
+                    "in_time": p.in_time.strftime('%H:%M:%S') if p.in_time else None,
+                    "out_time": p.out_time.strftime('%H:%M:%S') if p.out_time else None,
+                    "duration": str(timedelta(seconds=duration)) if duration else None,
+                    "is_manual": p.is_manual,
+                    "device_info": p.device_info
+                })
+
+            records.append({
+                "date": record.date,
+                "day_name": record.date.strftime('%A'),
+                "punches": punches_data,
+                "total_time": str(timedelta(seconds=total_seconds)),
+                "status": record.status,
+                "is_justified": record.is_justified
+            })
+        return records
+
+    attendances = await sync_to_async(fetch_records)()
+
+    return {
+        "employee_id": employee.id,
+        "start_date": start_date,
+        "end_date": end_date,
+        "attendances": attendances
+    }
