@@ -9,6 +9,7 @@ from django.utils.timezone import localtime
 from asgiref.sync import sync_to_async
 from datetime import date, datetime
 from django.contrib.auth import get_user_model
+from employee.basic_details.models import Employee
 
 attendance_api = Router(tags=["attendance"])
 User= get_user_model()
@@ -232,13 +233,15 @@ async def get_last_punch(request):
         return 400, {"message": "User not authenticated"}
 
     # 🔹 Step 1: Get Employee linked to this user
-    employee = await User.objects.filter(id=user.id).afirst()
+    user = await User.objects.filter(id=user.id).afirst()
+    employee = await Employee.objects.filter(user=user).afirst()
     if not employee:
         return 400, {"message": "Employee not found"}
+    
 
     # 🔹 Step 2: Get today's attendance record
     record = await AttendanceDailyRecord.objects.filter(
-        employee_id=employee.id,
+        employee=employee.id,
         date=date.today()
     ).afirst()
 
