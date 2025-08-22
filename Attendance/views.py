@@ -8,8 +8,10 @@ from hrstop.utils.attendence_utils import get_employee_from_user, format_duratio
 from django.utils.timezone import localtime
 from asgiref.sync import sync_to_async
 from datetime import date, datetime
+from django.contrib.auth import get_user_model
 
 attendance_api = Router(tags=["attendance"])
+User= get_user_model()
 
 @attendance_api.post("attendance/punch", response=Dict[str, Any])
 async def punch_attendance(request):
@@ -227,24 +229,32 @@ async def get_last_punch(request):
     """Get the last punch time (out_time if exists else in_time)"""
     user = request.auth
     if not user:
+        return 400, {"message": "User not authenticated"}
+
+    # 🔹 Step 1: Get Employee linked to this user
+    employee = await User.objects.filter(id=user.id).afirst()
+    if not employee:
         return 400, {"message": "Employee not found"}
-    
-    # FIX: use employee_id instead of employee=user.id (if FK)
+
+    # 🔹 Step 2: Get today's attendance record
     record = await AttendanceDailyRecord.objects.filter(
-        employee_id=user.id,   # 🔥 changed this line
+        employee_id=employee.id,
         date=date.today()
     ).afirst()
 
     if not record:
         return 200, {"last_punch_time": None, "message": "No punches today"}
 
-    # Get last punch ordered by ID (latest created)
-    last_punch = await record.time_punches.all().order_by("-id").afirst()
+    # 🔹 Step 3: Get last punch from related punches
+    last_punch = await AttendanceTimePunch.objects.filter(
+    daily_record=record
+).order_by("-id").afirst()
+
 
     if not last_punch:
         return 200, {"last_punch_time": None, "message": "No punches today"}
 
-    # Decide whether to return out_time or in_time
+    # 🔹 Step 4: Decide in/out
     punch_time = (
         last_punch.out_time.strftime("%H:%M:%S")
         if last_punch.out_time
