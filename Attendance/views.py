@@ -70,41 +70,42 @@ async def punch_attendance(request):
 
 
 async def get_daily_attendance_response(daily_record: AttendanceDailyRecord) -> Dict[str, Any]:
-    punches = [punch async for punch in daily_record.time_punches.all().order_by('in_time')]
-    
-    # Calculate total time
-    total_time = sum(
-        (punch.out_time - punch.in_time).total_seconds()
-        for punch in punches 
-        if punch.in_time and punch.out_time
+    punches = await sync_to_async(list)(
+        daily_record.time_punches.all().order_by("in_time")
     )
-    
-    # Check for holiday
+
+    total_time = sum(
+        (p.out_time - p.in_time).total_seconds()
+        for p in punches if p.in_time and p.out_time
+    )
+
     holiday = await Holiday.objects.filter(
         organization=daily_record.employee.user.organization,
         date=daily_record.date
     ).afirst()
-    
+
     return {
         "date": daily_record.date,
         "day_name": daily_record.date.strftime('%A'),
         "punches": [
             {
-                "id": punch.id,
-                "in_time": punch.in_time.strftime('%H:%M:%S') if punch.in_time else None,
-                "out_time": punch.out_time.strftime('%H:%M:%S') if punch.out_time else None,
-                "duration": await format_duration(punch.duration.total_seconds()) if punch.duration else None,
-                "is_manual": punch.is_manual,
-                "device_info": punch.device_info
+                "id": p.id,
+                "in_time": p.in_time.strftime('%H:%M:%S') if p.in_time else None,
+                "out_time": p.out_time.strftime('%H:%M:%S') if p.out_time else None,
+                "duration": await format_duration((p.out_time - p.in_time).total_seconds()) if p.in_time and p.out_time else None,
+                "is_manual": p.is_manual,
+                "device_info": p.device_info,
             }
-            for punch in punches
+            for p in punches
         ],
         "total_time": await format_duration(total_time),
         "status": daily_record.status,
         "is_justified": daily_record.is_justified,
         "is_holiday": bool(holiday),
-        "holiday_name": holiday.name if holiday else None
+        "holiday_name": holiday.name if holiday else None,
     }
+
+
 
 
 @attendance_api.get("/daily", response={200: DailyAttendanceResponse, 400: Message}, auth=AsyncJWTAuth())
@@ -375,6 +376,7 @@ async def get_all_attendance(request, start_date: str = None, end_date: str = No
         "end_date": end_date,
         "attendances": result
     }
+from django.utils import timezone
 
 @attendance_api.get("/all", response=Dict[str, Any])
 async def get_logged_user_attendance(request, start_date: str = None, end_date: str = None):
@@ -382,55 +384,92 @@ async def get_logged_user_attendance(request, start_date: str = None, end_date: 
 
     if start_date:
         start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+    else:
+        start_date = timezone.now().date() - timedelta(days=6)  # default last 7 days
+
     if end_date:
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+    else:
+        end_date = timezone.now().date()
 
     STANDARD_SECONDS = 8 * 60 * 60  # 8 hours
 
-    # ✅ Do ALL ORM inside sync function
     def fetch_records():
-        qs = AttendanceDailyRecord.objects.filter(employee=employee)
-        if start_date and end_date:
-            qs = qs.filter(date__range=(start_date, end_date))
-        qs = qs.order_by("-date").prefetch_related("time_punches")
+        # preload all attendance & holidays in one go
+        daily_qs = AttendanceDailyRecord.objects.filter(
+            employee=employee, date__range=(start_date, end_date)
+        ).prefetch_related("time_punches")
 
-        records = []
-        for record in qs:
-            punches = list(record.time_punches.all().order_by("in_time"))
+        records_map = {rec.date: rec for rec in daily_qs}
 
-            total_seconds = 0
+        holidays = {h.date: h for h in Holiday.objects.filter(
+            organization=employee.user.organization, date__range=(start_date, end_date)
+        )}
+
+        results = []
+        current_date = start_date
+        today = timezone.now().date()
+
+        while current_date <= end_date:
+            record = records_map.get(current_date)
             punches_data = []
-            for p in punches:
-                if p.in_time and p.out_time:
-                    start_dt = datetime.combine(record.date, p.in_time)
-                    end_dt = datetime.combine(record.date, p.out_time)
-                    duration = (end_dt - start_dt).total_seconds()
-                    total_seconds += duration
-                else:
+            total_seconds = 0
+            percentage = 0
+            status = None
+            is_justified = False
+
+            # check weekend
+            weekday = current_date.weekday()  # 0=Mon,6=Sun
+            if weekday in [5, 6]:  # Saturday/Sunday
+                status = "Weekend/Off Day"
+
+            # check holiday
+            elif current_date in holidays:
+                status = f"Holiday - {holidays[current_date].name}"
+
+            # if punch record exists
+            elif record:
+                punches = list(record.time_punches.all().order_by("in_time"))
+                for p in punches:
                     duration = None
+                    if p.in_time and p.out_time:
+                        duration = (datetime.combine(current_date, p.out_time) -
+                                    datetime.combine(current_date, p.in_time)).total_seconds()
+                        total_seconds += duration
 
-                punches_data.append({
-                    "id": p.id,
-                    "in_time": p.in_time.strftime('%H:%M:%S') if p.in_time else None,
-                    "out_time": p.out_time.strftime('%H:%M:%S') if p.out_time else None,
-                    "duration": str(timedelta(seconds=duration)) if duration else None,
-                    "is_manual": p.is_manual,
-                    "device_info": p.device_info
-                })
+                    punches_data.append({
+                        "id": p.id,
+                        "in_time": p.in_time.strftime('%H:%M:%S') if p.in_time else None,
+                        "out_time": p.out_time.strftime('%H:%M:%S') if p.out_time else None,
+                        "duration": str(timedelta(seconds=duration)) if duration else None,
+                        "is_manual": p.is_manual,
+                        "device_info": p.device_info
+                    })
 
-            # Calculate percentage of standard working hours
-            percentage = round((total_seconds / STANDARD_SECONDS) * 100, 2) if total_seconds else 0
+                percentage = round((total_seconds / STANDARD_SECONDS) * 100, 2) if total_seconds else 0
+                status = record.status
+                is_justified = record.is_justified
 
-            records.append({
-                "date": record.date,
-                "day_name": record.date.strftime('%A'),
+            # if no record
+            else:
+                if current_date > today:
+                    status = "Coming Day"
+                else:
+                    status = "Absent"
+
+            results.append({
+                "date": current_date,
+                "day_name": current_date.strftime("%A"),
                 "punches": punches_data,
-                "total_time": str(timedelta(seconds=total_seconds)),
+                "total_time": str(timedelta(seconds=total_seconds)) if total_seconds else None,
                 "percentage": percentage,
-                "status": record.status,
-                "is_justified": record.is_justified
+                "status": status,
+                "is_justified": is_justified
             })
-        return records
+
+            current_date += timedelta(days=1)
+
+        return results
 
     attendances = await sync_to_async(fetch_records)()
 
