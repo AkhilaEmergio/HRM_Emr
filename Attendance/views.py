@@ -385,6 +385,8 @@ async def get_logged_user_attendance(request, start_date: str = None, end_date: 
     if end_date:
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
 
+    STANDARD_SECONDS = 8 * 60 * 60  # 8 hours
+
     # ✅ Do ALL ORM inside sync function
     def fetch_records():
         qs = AttendanceDailyRecord.objects.filter(employee=employee)
@@ -416,11 +418,15 @@ async def get_logged_user_attendance(request, start_date: str = None, end_date: 
                     "device_info": p.device_info
                 })
 
+            # Calculate percentage of standard working hours
+            percentage = round((total_seconds / STANDARD_SECONDS) * 100, 2) if total_seconds else 0
+
             records.append({
                 "date": record.date,
                 "day_name": record.date.strftime('%A'),
                 "punches": punches_data,
                 "total_time": str(timedelta(seconds=total_seconds)),
+                "percentage": percentage,
                 "status": record.status,
                 "is_justified": record.is_justified
             })
