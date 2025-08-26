@@ -167,13 +167,24 @@ async def create_references(request, data: ReferencesSchema):
     user = request.auth
     try:
         employee = await sync_to_async(Employee.objects.get)(user=user)
+
         reference = await sync_to_async(References.objects.create)(
             employee=employee,
-            **data.dict()
+            **data.dict(exclude={"employee"})
         )
-        return 201, ReferencesSchema.from_orm(reference)
+
+        return 201, ReferencesSchema(
+            id=reference.id,
+            employee=employee.id,
+            name=reference.name,
+            job_title=reference.job_title,
+            company=reference.company,
+            email=reference.email,
+            mobile_no=reference.mobile_no,
+        )
     except Employee.DoesNotExist:
         return 400, {"message": "Employee profile not found"}
+
 
 @employee_additional_api.get("/references", response={200: List[ReferencesSchema], 404: dict})
 async def get_references(request):
@@ -181,7 +192,42 @@ async def get_references(request):
     try:
         employee = await sync_to_async(Employee.objects.get)(user=user)
         references = await sync_to_async(list)(References.objects.filter(employee=employee))
-        return 200, [ReferencesSchema.from_orm(r) for r in references]
+
+        return 200, [
+            ReferencesSchema(
+                id=r.id,
+                employee=employee.id,
+                name=r.name,
+                job_title=r.job_title,
+                company=r.company,
+                email=r.email,
+                mobile_no=r.mobile_no,
+            )
+            for r in references
+        ]
+    except Employee.DoesNotExist:
+        return 404, {"message": "Employee profile not found"}
+
+
+@employee_additional_api.get("/references", response={200: List[ReferencesSchema], 404: dict})
+async def get_references(request):
+    user = request.auth
+    try:
+        employee = await sync_to_async(Employee.objects.get)(user=user)
+        references = await sync_to_async(list)(References.objects.filter(employee=employee))
+
+        return 200, [
+            ReferencesSchema(
+                id=r.id,
+                employee=employee.id,
+                name=r.name,
+                job_title=r.job_title,
+                company=r.company,
+                email=r.email,
+                mobile_no=r.mobile_no,
+            )
+            for r in references
+        ]
     except Employee.DoesNotExist:
         return 404, {"message": "Employee profile not found"}
 
