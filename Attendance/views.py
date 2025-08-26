@@ -196,6 +196,12 @@ async def get_attendance_summary(request, month: int = None, year: int = None):
         present_days = sum(1 for r in records if r.status == 'present')
         absent_days = sum(1 for r in records if r.status == 'absent')
         late_days = sum(1 for r in records if r.status == 'late')
+        # early_left_days and half_days can be calculated similarly if needed
+        early_left_days = sum(1 for r in records if r.status == 'early_left')
+        half_days = sum(1 for r in records if r.status == 'half_day')
+        holiday_days = sum(1 for r in records if r.is_holiday)
+        weekend_days = sum(1 for r in records if r.status == 'weekend')
+
 
         # total hours worked
         total_hours = sum(
@@ -214,10 +220,10 @@ async def get_attendance_summary(request, month: int = None, year: int = None):
             "present_days": present_days,
             "absent_days": absent_days,
             "late_days": late_days,
-            "early_left_days": 0,
-            "half_days": 0,
-            "holiday_days": 0,
-            "weekend_days": 0,
+            "early_left_days": early_left_days,
+            "half_days": half_days,
+            "holiday_days": holiday_days,
+            "weekend_days": weekend_days,
             "total_working_hours": f"{total_hours:.2f}",     # convert float → string
             "expected_working_hours": str(expected_hours),   # int → string
             "discrepancy_hours": f"{discrepancy:.2f}",       # float → string

@@ -16,6 +16,7 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from ninja.errors import HttpError
 
+
 employee_basic_api = Router(tags=['employee_basic'])
 User = get_user_model()
 
@@ -60,7 +61,8 @@ async def create_employee(request, data: EmployeeInputSchema):
     if user and await sync_to_async(lambda: user.role == 'admin' and user.organization)():
         try:
             # Create a User object with user-specific fields
-            user_obj = await sync_to_async(User.objects.create)(name=data.name, username=data.username, email=data.email, phone=data.phone,password=data.password)
+            user_obj = await sync_to_async(User.objects.create)(name=data.name, username=data.username, email=data.email, phone=data.phone,password=data.password,role=data.role,  # ✅ set role
+                organization=user.organization)
             user_obj.set_password(data.password)  # Set the password here
             await sync_to_async(user_obj.save)()
 
@@ -273,16 +275,26 @@ async def delete_employee(request, id: int):
 async def create_personal_detail(request, data: PersonalDetailSchema):
     user = request.auth
     try:
+        # get employee of logged-in user
         employee = await sync_to_async(Employee.objects.get)(user=user)
+
+        # check if already exists
+        exists = await sync_to_async(PersonalDetail.objects.filter(employee=employee).exists)()
+        if exists:
+            return 400, {"message": "Personal detail already exists for this employee"}
+
+        # create new personal detail
         personal_detail = await sync_to_async(PersonalDetail.objects.create)(
             employee=employee,
             **data.dict()
         )
         return 201, PersonalDetailSchema.from_orm(personal_detail)
+
     except Employee.DoesNotExist:
         return 400, {"message": "Employee profile not found"}
     except Exception as e:
         return 400, {"message": str(e)}
+
 
 @employee_basic_api.get("/personal_detail", response={200: PersonalDetailSchema, 404: dict})
 async def get_personal_detail(request):
@@ -312,3 +324,46 @@ async def update_personal_detail(request, data: PersonalDetailSchema):
         return 400, {"message": "Personal details not found"}
     except Employee.DoesNotExist:
         return 400, {"message": "Employee profile not found"}
+
+
+
+
+import qrcode
+import base64
+from io import BytesIO
+from ninja.responses import Response
+
+@employee_basic_api.get("/employee/business-card", response={200: dict, 400: Message})
+async def get_business_card(request):
+    user = request.auth
+    if not user:
+        return 400, {"message": "Unauthorized"}
+
+    try:
+        # Example vCard content
+        vcard = f"""
+        BEGIN:VCARD
+        VERSION:3.0
+        N:{user.name}
+        TEL:{user.phone}
+        EMAIL:{user.email}
+        ORG:{user.organization.name if user.organization else ""}
+        END:VCARD
+        """
+
+        # Generate QR
+        qr = qrcode.make(vcard)
+        buf = BytesIO()
+        qr.save(buf, format="PNG")
+        qr_base64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+        return 200, {
+            "name": user.name,
+            "email": user.email,
+            "phone": user.phone,
+            "organization": user.organization.name if user.organization else "",
+            "qr_code": f"data:image/png;base64,{qr_base64}"
+        }
+
+    except Exception as e:
+        return 400, {"message": str(e)}
