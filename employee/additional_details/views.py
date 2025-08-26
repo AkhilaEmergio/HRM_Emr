@@ -6,10 +6,10 @@ from employee.additional_details.schema import *
 from django.core.exceptions import ObjectDoesNotExist
 from asgiref.sync import sync_to_async
 
-employee_basic_api = Router()
+employee_additional_api = Router()
 
 # EDUCATION
-@employee_basic_api.post("/education", response={201: EducationSchema, 400: dict})
+@employee_additional_api.post("/education", response={201: EducationSchema, 400: dict})
 async def create_education(request, data: EducationSchema):
     user = request.auth
     try:
@@ -22,7 +22,7 @@ async def create_education(request, data: EducationSchema):
     except Employee.DoesNotExist:
         return 400, {"message": "Employee profile not found"}
 
-@employee_basic_api.get("/education", response={200: List[EducationSchema], 404: dict})
+@employee_additional_api.get("/education", response={200: List[EducationSchema], 404: dict})
 async def get_education(request):
     user = request.auth
     try:
@@ -33,7 +33,7 @@ async def get_education(request):
         return 404, {"message": "Employee profile not found"}
 
 # EMERGENCY
-@employee_basic_api.post("/emergency", response={201: EmergencySchema, 400: dict})
+@employee_additional_api.post("/emergency", response={201: EmergencySchema, 400: dict})
 async def create_emergency(request, data: EmergencySchema):
     user = request.auth
     try:
@@ -46,7 +46,7 @@ async def create_emergency(request, data: EmergencySchema):
     except Employee.DoesNotExist:
         return 400, {"message": "Employee profile not found"}
 
-@employee_basic_api.get("/emergency", response={200: List[EmergencySchema], 404: dict})
+@employee_additional_api.get("/emergency", response={200: List[EmergencySchema], 404: dict})
 async def get_emergency(request):
     user = request.auth
     try:
@@ -57,7 +57,7 @@ async def get_emergency(request):
         return 404, {"message": "Employee profile not found"}
 
 # FAMILY
-@employee_basic_api.post("/family", response={201: FamilySchema, 400: dict})
+@employee_additional_api.post("/family", response={201: FamilySchema, 400: dict})
 async def create_family(request, data: FamilySchema):
     user = request.auth
     try:
@@ -70,7 +70,7 @@ async def create_family(request, data: FamilySchema):
     except Employee.DoesNotExist:
         return 400, {"message": "Employee profile not found"}
 
-@employee_basic_api.get("/family", response={200: List[FamilySchema], 404: dict})
+@employee_additional_api.get("/family", response={200: List[FamilySchema], 404: dict})
 async def get_family(request):
     user = request.auth
     try:
@@ -81,7 +81,7 @@ async def get_family(request):
         return 404, {"message": "Employee profile not found"}
 
 # JOB HISTORY
-@employee_basic_api.post("/jobhistory", response={201: JobhistorySchema, 400: dict})
+@employee_additional_api.post("/jobhistory", response={201: JobhistorySchema, 400: dict})
 async def create_job_history(request, data: JobhistorySchema):
     user = request.auth
     try:
@@ -94,7 +94,7 @@ async def create_job_history(request, data: JobhistorySchema):
     except Employee.DoesNotExist:
         return 400, {"message": "Employee profile not found"}
 
-@employee_basic_api.get("/jobhistory", response={200: List[JobhistorySchema], 404: dict})
+@employee_additional_api.get("/jobhistory", response={200: List[JobhistorySchema], 404: dict})
 async def get_job_history(request):
     user = request.auth
     try:
@@ -105,7 +105,7 @@ async def get_job_history(request):
         return 404, {"message": "Employee profile not found"}
 
 # REFERENCES
-@employee_basic_api.post("/references", response={201: ReferencesSchema, 400: dict})
+@employee_additional_api.post("/references", response={201: ReferencesSchema, 400: dict})
 async def create_references(request, data: ReferencesSchema):
     user = request.auth
     try:
@@ -118,7 +118,7 @@ async def create_references(request, data: ReferencesSchema):
     except Employee.DoesNotExist:
         return 400, {"message": "Employee profile not found"}
 
-@employee_basic_api.get("/references", response={200: List[ReferencesSchema], 404: dict})
+@employee_additional_api.get("/references", response={200: List[ReferencesSchema], 404: dict})
 async def get_references(request):
     user = request.auth
     try:
@@ -129,7 +129,7 @@ async def get_references(request):
         return 404, {"message": "Employee profile not found"}
 
 # BANK
-@employee_basic_api.post("/bank", response={201: BankSchema, 400: dict})
+@employee_additional_api.post("/bank", response={201: BankSchema, 400: dict})
 async def create_bank(request, data: BankSchema):
     user = request.auth
     try:
@@ -142,7 +142,7 @@ async def create_bank(request, data: BankSchema):
     except Employee.DoesNotExist:
         return 400, {"message": "Employee profile not found"}
 
-@employee_basic_api.get("/bank", response={200: List[BankSchema], 404: dict})
+@employee_additional_api.get("/bank", response={200: List[BankSchema], 404: dict})
 async def get_bank(request):
     user = request.auth
     try:

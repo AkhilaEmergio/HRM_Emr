@@ -11,11 +11,11 @@ class EducationSchema(Schema):
     employee:Optional[int]=None
     degree:str
     specialization:Optional[str]
-    college = str
-    university =Optional[str]
-    year_of_passing = str
-    gpa = Optional[str]
-    document = Optional[str]
+    college:str
+    university :Optional[str]
+    year_of_passing : str
+    gpa : Optional[str]
+    document : Optional[str]
 
 class EmergencySchema(Schema):
     employee:Optional[int]=None
