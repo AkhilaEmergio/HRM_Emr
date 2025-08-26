@@ -91,8 +91,8 @@ class JobhistorySchema(Schema):
     reason: Optional[str] = None
     document: Optional[str] = None
 
-    class Config:
-        orm_mode = True   # ✅ required for from_orm
+    # class Config:
+    #     orm_mode = True   # ✅ required for from_orm
 
 
 class ReferencesSchema(Schema):
