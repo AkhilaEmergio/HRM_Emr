@@ -133,6 +133,34 @@ async def get_employees(request, id: Optional[int] = None):
             return 400, {"message": str(e)}
     return 400, {"message": "Unauthorized or organization not found"}
 
+@employee_basic_api.get("/employee/me", response={200: EmployeeSchema, 400: Message})
+async def get_logged_employee(request):
+    user = request.auth
+    if not user or not await sync_to_async(lambda: user.organization)():
+        return 400, {"message": "Unauthorized or organization not found"}
+
+    try:
+        employee = await sync_to_async(Employee.objects.select_related(
+            'user',
+            'created_by',
+            'reporting_manager',
+            'business_unit',
+            'business_unit__unit_head',
+            'business_unit__updated_by',
+            'department',
+            'department__department_head',
+            'department__updated_by',
+            'designation',
+            'designation__updated_by'
+        ).get)(user=user)
+
+        return 200, EmployeeSchema.from_orm(employee)
+    except Employee.DoesNotExist:
+        return 400, {"message": "Employee record not found"}
+    except Exception as e:
+        return 400, {"message": str(e)}
+
+
 @employee_basic_api.put("/employee/{id}", response={200: EmployeeSchema, 400: Message, 404: Message})
 async def update_employee(request, id: int, payload: EmployeeUpdateSchema):
     user = request.auth
