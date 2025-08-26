@@ -237,13 +237,24 @@ async def create_bank(request, data: BankSchema):
     user = request.auth
     try:
         employee = await sync_to_async(Employee.objects.get)(user=user)
+
         bank = await sync_to_async(Bank.objects.create)(
             employee=employee,
-            **data.dict()
+            **data.dict(exclude={"employee"})
         )
-        return 201, BankSchema.from_orm(bank)
+
+        return 201, BankSchema(
+            id=bank.id,
+            employee=employee.id,
+            name_of_bank=bank.name_of_bank,
+            account_no=bank.account_no,
+            ifsc=bank.ifsc,
+            branch=bank.branch,
+            account_type=bank.account_type,
+        )
     except Employee.DoesNotExist:
         return 400, {"message": "Employee profile not found"}
+
 
 @employee_additional_api.get("/bank", response={200: List[BankSchema], 404: dict})
 async def get_bank(request):
@@ -251,6 +262,42 @@ async def get_bank(request):
     try:
         employee = await sync_to_async(Employee.objects.get)(user=user)
         banks = await sync_to_async(list)(Bank.objects.filter(employee=employee))
-        return 200, [BankSchema.from_orm(b) for b in banks]
+
+        return 200, [
+            BankSchema(
+                id=b.id,
+                employee=employee.id,
+                name_of_bank=b.name_of_bank,
+                account_no=b.account_no,
+                ifsc=b.ifsc,
+                branch=b.branch,
+                account_type=b.account_type,
+            )
+            for b in banks
+        ]
     except Employee.DoesNotExist:
         return 404, {"message": "Employee profile not found"}
+
+
+@employee_additional_api.get("/bank", response={200: List[BankSchema], 404: dict})
+async def get_bank(request):
+    user = request.auth
+    try:
+        employee = await sync_to_async(Employee.objects.get)(user=user)
+        banks = await sync_to_async(list)(Bank.objects.filter(employee=employee))
+
+        return 200, [
+            BankSchema(
+                id=b.id,
+                employee=employee.id,
+                name_of_bank=b.name_of_bank,
+                account_no=b.account_no,
+                ifsc=b.ifsc,
+                branch=b.branch,
+                account_type=b.account_type,
+            )
+            for b in banks
+        ]
+    except Employee.DoesNotExist:
+        return 404, {"message": "Employee profile not found"}
+
