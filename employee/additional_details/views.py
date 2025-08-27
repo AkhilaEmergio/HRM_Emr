@@ -55,7 +55,18 @@ async def get_education(request):
         education = await sync_to_async(list)(
             Education.objects.filter(employee=employee)
         )
-        return 200, [EducationSchema.from_orm(e) for e in education]
+        return 200, [{
+            "id": edu.id,
+            "employee": employee.id,
+            "degree": edu.degree,
+            "specialization": edu.specialization,
+            "college": edu.college,
+            "university": edu.university,
+            "year_of_passing": edu.year_of_passing,
+            "gpa": edu.gpa,
+            "document": edu.document if edu.document else None,
+        } for edu in education
+        ]
     except Employee.DoesNotExist:
         return 404, {"message": "Employee profile not found"}
 
