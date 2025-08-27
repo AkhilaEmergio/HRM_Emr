@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from typing import Dict, Any
 from ninja_jwt.authentication import AsyncJWTAuth
 from .schema import *
-from .models import AttendanceDailyRecord, AttendanceTimePunch,Holiday
+from .models import AttendanceDailyRecord, AttendanceTimePunch,Holiday,AttendanceJustification
 from hrstop.utils.attendence_utils import get_employee_from_user, format_duration
 from django.utils.timezone import localtime
 from asgiref.sync import sync_to_async
@@ -68,21 +68,22 @@ async def punch_attendance(request):
         "is_justified": daily_record.is_justified
     }
 
-
 async def get_daily_attendance_response(daily_record: AttendanceDailyRecord) -> Dict[str, Any]:
-    punches = await sync_to_async(list)(
-        daily_record.time_punches.all().order_by("in_time")
-    )
+    # Fetch punches asynchronously using sync_to_async
+    punches = await sync_to_async(lambda: list(daily_record.time_punches.all().order_by("in_time")))()
 
-    total_time = sum(
-        (p.out_time - p.in_time).total_seconds()
+    # Calculate total time
+    total_time_seconds = sum(
+        ((p.out_time.hour*3600 + p.out_time.minute*60 + p.out_time.second) -
+         (p.in_time.hour*3600 + p.in_time.minute*60 + p.in_time.second))
         for p in punches if p.in_time and p.out_time
     )
 
-    holiday = await Holiday.objects.filter(
+    # Fetch holiday asynchronously
+    holiday = await sync_to_async(lambda: Holiday.objects.filter(
         organization=daily_record.employee.user.organization,
         date=daily_record.date
-    ).afirst()
+    ).first())()
 
     return {
         "date": daily_record.date,
@@ -92,81 +93,97 @@ async def get_daily_attendance_response(daily_record: AttendanceDailyRecord) -> 
                 "id": p.id,
                 "in_time": p.in_time.strftime('%H:%M:%S') if p.in_time else None,
                 "out_time": p.out_time.strftime('%H:%M:%S') if p.out_time else None,
-                "duration": await format_duration((p.out_time - p.in_time).total_seconds()) if p.in_time and p.out_time else None,
+                "duration": await format_duration(
+                    ((p.out_time.hour*3600 + p.out_time.minute*60 + p.out_time.second) -
+                     (p.in_time.hour*3600 + p.in_time.minute*60 + p.in_time.second))
+                ) if p.in_time and p.out_time else None,
                 "is_manual": p.is_manual,
                 "device_info": p.device_info,
             }
             for p in punches
         ],
-        "total_time": await format_duration(total_time),
+        "total_time": await format_duration(total_time_seconds),
         "status": daily_record.status,
         "is_justified": daily_record.is_justified,
         "is_holiday": bool(holiday),
         "holiday_name": holiday.name if holiday else None,
     }
 
-
-
-
 @attendance_api.get("/daily", response={200: DailyAttendanceResponse, 400: Message}, auth=AsyncJWTAuth())
-async def get_daily_attendance(request, date: date = None):
-    """Get daily attendance record"""
+async def get_daily_attendance(request, target_date: date = None):
+    """Get daily attendance record for the logged-in employee"""
     user = request.auth
     if not user:
         return 400, {"message": "Employee not found"}
 
+    target_date = target_date or datetime.today().date()
+
     try:
-        target_date = date or datetime.today().date()
+        # Fetch employee safely in sync thread
+        employee = await sync_to_async(lambda: Employee.objects.filter(user_id=user.id).first())()
+        if not employee:
+            return 400, {"message": "Employee not found"}
 
-        daily_record = await AttendanceDailyRecord.objects.prefetch_related("time_punches").aget(
-            employee=user.id,
-            date=target_date
-        )
+        # Fetch daily record safely in sync thread
+        daily_record = await sync_to_async(
+            lambda: AttendanceDailyRecord.objects.filter(
+                employee=employee,
+                date=target_date
+            ).prefetch_related("time_punches").first()
+        )()
 
-        return 200, await get_daily_attendance_response(daily_record)
-
-    except AttendanceDailyRecord.DoesNotExist:
-        return 200, {
-            "date": target_date,
-            "day_name": target_date.strftime("%A"),
-            "punches": [],
-            "status": "absent",
-            "total_time": "00:00",
-            "is_justified": False,
-            "is_holiday": False,
-            "holiday_name": None,
-        }
+        if daily_record:
+            # Call your async helper
+            return 200, await get_daily_attendance_response(daily_record)
+        else:
+            return 200, {
+                "date": target_date,
+                "day_name": target_date.strftime("%A"),
+                "punches": [],
+                "status": "absent",
+                "total_time": "00:00",
+                "is_justified": False,
+                "is_holiday": False,
+                "holiday_name": None,
+            }
 
     except Exception as e:
         return 400, {"message": str(e)}
 
+
+
 @attendance_api.get("/weekly", response={200: AttendanceRangeResponse, 400: Message}, auth=AsyncJWTAuth())
 async def get_weekly_attendance(request, start_date: date = None, end_date: date = None):
-    """Get weekly attendance records"""
+    """Get weekly attendance records for the logged-in employee"""
     user = request.auth
     if not user:
         return 400, {"message": "Employee not found"}
-    
+
     try:
-        if not start_date or not end_date:
-            today = date.today()
-            start_date = today - timedelta(days=today.weekday())
-            end_date = start_date + timedelta(days=6)
-        
+        today = date.today()
+        start_date = start_date or (today - timedelta(days=today.weekday()))
+        end_date = end_date or (start_date + timedelta(days=6))
+
+        employee = await Employee.objects.filter(user_id=user.id).afirst()
+        if not employee:
+            return 400, {"message": "Employee not found"}
+
         records = await sync_to_async(list)(
             AttendanceDailyRecord.objects.filter(
-                employee=user.id,
+                employee=employee,
                 date__gte=start_date,
                 date__lte=end_date
-            ).order_by('date')
+            ).prefetch_related("time_punches").order_by('date')
         )
-        
+
+        attendances = []
+        for record in records:
+            attendances.append(await get_daily_attendance_response(record))
+
         return 200, {
             "start_date": start_date,
             "end_date": end_date,
-            "attendances": [
-                await get_daily_attendance_response(record) for record in records
-            ]
+            "attendances": attendances
         }
 
     except Exception as e:
@@ -175,47 +192,66 @@ async def get_weekly_attendance(request, start_date: date = None, end_date: date
 
 @attendance_api.get("/summary", response={200: AttendanceSummary, 400: Message}, auth=AsyncJWTAuth())
 async def get_attendance_summary(request, month: int = None, year: int = None):
-    """Get monthly attendance summary"""
+    """Get monthly attendance summary for the logged-in employee"""
     user = request.auth
     if not user:
         return 400, {"message": "Employee not found"}
-    
+
     try:
         today = date.today()
         month = month or today.month
         year = year or today.year
-        
+
+        # Fetch user and employee asynchronously
+        user_obj = await User.objects.filter(id=user.id).afirst()
+        if not user_obj:
+            return 400, {"message": "User not found"}
+
+        employee = await Employee.objects.filter(user=user_obj).afirst()
+        if not employee:
+            return 400, {"message": "Employee not found"}
+
+        # Get all daily attendance records for the month
         records = await sync_to_async(list)(
             AttendanceDailyRecord.objects.filter(
-                employee=user.id,
+                employee=employee,
                 date__year=year,
                 date__month=month
-            )
+            ).prefetch_related('time_punches')
         )
-        
-        present_days = sum(1 for r in records if r.status == 'present')
-        absent_days = sum(1 for r in records if r.status == 'absent')
-        late_days = sum(1 for r in records if r.status == 'late')
-        # early_left_days and half_days can be calculated similarly if needed
-        early_left_days = sum(1 for r in records if r.status == 'early_left')
-        half_days = sum(1 for r in records if r.status == 'half_day')
-        holiday_days = sum(1 for r in records if r.is_holiday)
-        weekend_days = sum(1 for r in records if r.status == 'weekend')
 
+        # Initialize counters
+        present_days = absent_days = late_days = early_left_days = half_days = holiday_days = weekend_days = 0
+        total_seconds = 0
 
-        # total hours worked
-        total_hours = sum(
-            (r.total_time.total_seconds() if r.total_time else 0) 
-            for r in records
-        ) / 3600  
+        for record in records:
+            # Count statuses
+            if record.status == 'present':
+                present_days += 1
+            elif record.status == 'absent':
+                absent_days += 1
+            elif record.status == 'late':
+                late_days += 1
+            elif record.status == 'early_left':
+                early_left_days += 1
+            elif record.status == 'half_day':
+                half_days += 1
+            elif record.status == 'holiday':
+                holiday_days += 1
+            elif record.status == 'weekend':
+                weekend_days += 1
 
-        # expected hours (assuming 8 per present day)
-        expected_hours = present_days * 8  
+            # Sum total worked seconds for all punches
+            total_seconds += sum(
+                (tp.duration.total_seconds() for tp in record.time_punches.all() if tp.duration)
+            )
 
-        discrepancy = total_hours - expected_hours  
+        total_hours = total_seconds / 3600
+        expected_hours = present_days * 8  # Assuming 8 hours per present day
+        discrepancy = total_hours - expected_hours
 
         return 200, {
-            "month": str(month),   # make month string if schema wants it
+            "month": str(month),
             "year": year,
             "present_days": present_days,
             "absent_days": absent_days,
@@ -224,14 +260,78 @@ async def get_attendance_summary(request, month: int = None, year: int = None):
             "half_days": half_days,
             "holiday_days": holiday_days,
             "weekend_days": weekend_days,
-            "total_working_hours": f"{total_hours:.2f}",     # convert float → string
-            "expected_working_hours": str(expected_hours),   # int → string
-            "discrepancy_hours": f"{discrepancy:.2f}",       # float → string
+            "total_working_hours": f"{total_hours:.2f}",
+            "expected_working_hours": str(expected_hours),
+            "discrepancy_hours": f"{discrepancy:.2f}",
         }
-        
+
     except Exception as e:
         return 400, {"message": str(e)}
 
+@attendance_api.get("/monthly", response={200: list, 400: Message}, auth=AsyncJWTAuth())
+async def get_monthly_attendance(request, month: int = None, year: int = None):
+    """
+    Get detailed daily attendance for the logged-in employee for a specific month.
+    Returns daily status, punches, and total worked hours per day.
+    """
+    user = request.auth
+    if not user:
+        return 400, {"message": "Employee not found"}
+
+    try:
+        today = date.today()
+        month = month or today.month
+        year = year or today.year
+
+        # Fetch user and employee asynchronously
+        user_obj = await User.objects.filter(id=user.id).afirst()
+        if not user_obj:
+            return 400, {"message": "User not found"}
+
+        employee = await Employee.objects.filter(user=user_obj).afirst()
+        if not employee:
+            return 400, {"message": "Employee not found"}
+
+        # Fetch all daily attendance records for the month
+        records = await sync_to_async(list)(
+            AttendanceDailyRecord.objects.filter(
+                employee=employee,
+                date__year=year,
+                date__month=month
+            ).prefetch_related('time_punches')
+        )
+
+        monthly_data = []
+        for record in records:
+            punches_data = [
+                {
+                    "in_time": str(tp.in_time) if tp.in_time else None,
+                    "out_time": str(tp.out_time) if tp.out_time else None,
+                    "duration_hours": round(tp.duration.total_seconds()/3600, 2) if tp.duration else 0,
+                    "is_manual": tp.is_manual,
+                    "device_info": tp.device_info,
+                    "location": tp.location,
+                }
+                for tp in record.time_punches.all()
+            ]
+
+            total_seconds = sum(tp.duration.total_seconds() for tp in record.time_punches.all() if tp.duration)
+            total_hours = round(total_seconds / 3600, 2)
+
+            monthly_data.append({
+                "date": str(record.date),
+                "status": record.status,
+                "is_justified": record.is_justified,
+                "justification_reason": record.justification_reason,
+                "total_worked_hours": total_hours,
+                "punches": punches_data
+            })
+
+        return 200, monthly_data
+
+    except Exception as e:
+        return 400, {"message": str(e)}
+    
 @attendance_api.get("/last-punch", auth=AsyncJWTAuth())
 async def get_last_punch(request):
     """Get the last punch time (out_time if exists else in_time)"""
@@ -485,3 +585,48 @@ async def get_logged_user_attendance(request, start_date: str = None, end_date: 
         "end_date": end_date,
         "attendances": attendances
     }
+
+
+# @attendance_api.post("/request", response={200: AttendanceRequestResponse, 400: Message}, auth=AsyncJWTAuth())
+# async def submit_attendance_request(request, payload: AttendanceRequestSchema):
+#     user = request.auth
+#     if not user:
+#         return 400, {"message": "Employee not found"}
+
+#     try:
+#         # Auto-assign employee from logged-in user
+#         employee = await sync_to_async(lambda: Employee.objects.filter(user_id=user.id).first())()
+#         if not employee:
+#             return 400, {"message": "Employee not found"}
+
+#         # Get daily record for the date provided (or today if using "requested for")
+#         daily_record = await sync_to_async(lambda: AttendanceDailyRecord.objects.filter(
+#             employee=employee,
+#             date=payload.daily_record_id  # or map "requested_for" to date
+#         ).first())()
+#         if not daily_record:
+#             return 400, {"message": "Daily attendance record not found"}
+
+#         # Create justification request
+#         justification = await sync_to_async(lambda: AttendanceJustification.objects.create(
+#             employee=employee,
+#             daily_record=daily_record,
+#             request_type=payload.request_type,
+#             reason=payload.reason,
+#             supporting_document=payload.supporting_document
+#         ))()
+
+#         return 200, {
+#             "id": justification.id,
+#             "employee_id": employee.id,
+#             "daily_record_id": daily_record.id,
+#             "request_type": justification.request_type,
+#             "reason": justification.reason,
+#             "status": justification.status,
+#             "supporting_document": justification.supporting_document.url if justification.supporting_document else None,
+#             "created_at": str(justification.created_at),
+#             "updated_at": str(justification.updated_at),
+#         }
+
+#     except Exception as e:
+#         return 400, {"message": str(e)}
