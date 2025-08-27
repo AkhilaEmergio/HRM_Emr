@@ -16,21 +16,7 @@ class EducationSchema(Schema):
     university: Optional[str]
     year_of_passing: str
     gpa: Optional[str]
-    document: Optional[str]
-
-    @classmethod
-    def from_orm(cls, obj):
-        return cls(
-            id=obj.id,
-            employee=getattr(obj, "employee_id", None),  # 👈 convert to int
-            degree=obj.degree,
-            specialization=obj.specialization,
-            college=obj.college,
-            university=obj.university,
-            year_of_passing=obj.year_of_passing,
-            gpa=obj.gpa,
-            document=str(obj.document) if obj.document else None,
-        )
+    document: Optional[str]=None
 
 
 class EmergencySchema(Schema):

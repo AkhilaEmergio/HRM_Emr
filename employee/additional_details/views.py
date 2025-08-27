@@ -27,7 +27,17 @@ async def create_education(request, data: EducationSchema, document: Optional[Up
             education.document = document
             await sync_to_async(education.save)()
 
-        return 201, EducationSchema.from_orm(education)
+        return 201,{
+            "id": education.id,
+            "employee": employee.id,
+            "degree": education.degree,
+            "specialization": education.specialization,
+            "college": education.college,
+            "university": education.university,
+            "year_of_passing": education.year_of_passing,
+            "gpa": education.gpa,
+            "document": education.document if education.document else None,
+        }
 
     except Employee.DoesNotExist:
         return 400, {"message": "Employee profile not found"}
