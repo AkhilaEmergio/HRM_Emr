@@ -240,7 +240,30 @@ async def update_employee(request, id: int, payload: EmployeeUpdateSchema):
             # Refresh the employee instance to get updated data
             updated_employee = await sync_to_async(base_query.get)(id=id)
             
-            return 200, EmployeeSchema.from_orm(updated_employee)
+            employee_data = EmployeeSchema.from_orm(updated_employee).dict()
+
+            # ✅ Normalize related fields for consistent response
+            if updated_employee.designation:
+                employee_data["designation"] = {"title": updated_employee.designation.title}
+            else:
+                employee_data["designation"] = None
+
+            if updated_employee.department:
+                employee_data["department"] = {"title": updated_employee.department.title}
+            else:
+                employee_data["department"] = None
+
+            if updated_employee.business_unit:
+                employee_data["business_unit"] = {"title": updated_employee.business_unit.title}
+            else:
+                employee_data["business_unit"] = None
+
+            if updated_employee.reporting_manager:
+                employee_data["reporting_manager"] = {"email": updated_employee.reporting_manager.email}
+            else:
+                employee_data["reporting_manager"] = None
+
+            return 200, employee_data
 
         except Employee.DoesNotExist:
             return 404, {"message": "Employee not found"}

@@ -7,6 +7,7 @@ from enum import Enum
 class Message(Schema):
     message: str
 
+
 class PunchRecord(Schema):
     id: Optional[int] = None
     in_time: Optional[str] = None
@@ -104,3 +105,26 @@ class ManualPunchRequest(Schema):
             return v
         except ValueError:
             raise ValueError("Time must be in HH:MM:SS format")
+        
+
+class EmployeeMonthlyAttendance(Schema):
+    employee_id: int
+    employee_name: str
+    attendance: List[DailyAttendanceResponse]
+
+
+class OrganizationSchema(Schema):
+    id: int
+    name: str
+    domain: str
+    code: str
+    logo: Optional[str]
+    timezone: str
+    address: Dict[str, Any]
+
+
+class MonthlyAttendanceResponse(Schema):
+    organization: OrganizationSchema
+    month: int
+    year: int
+    employees: List[EmployeeMonthlyAttendance]

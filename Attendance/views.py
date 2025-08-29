@@ -10,6 +10,7 @@ from asgiref.sync import sync_to_async
 from datetime import date, datetime
 from django.contrib.auth import get_user_model
 from employee.basic_details.models import Employee
+from user.models import UserProfile
 
 attendance_api = Router(tags=["attendance"])
 User= get_user_model()
@@ -587,6 +588,7 @@ async def get_logged_user_attendance(request, start_date: str = None, end_date: 
     }
 
 
+
 # @attendance_api.post("/request", response={200: AttendanceRequestResponse, 400: Message}, auth=AsyncJWTAuth())
 # async def submit_attendance_request(request, payload: AttendanceRequestSchema):
 #     user = request.auth
@@ -630,3 +632,107 @@ async def get_logged_user_attendance(request, start_date: str = None, end_date: 
 
 #     except Exception as e:
 #         return 400, {"message": str(e)}
+@attendance_api.get(
+    "/monthly-all",
+    response={200: MonthlyAttendanceResponse, 400: Message},
+    auth=AsyncJWTAuth(),
+)
+async def get_monthly_attendance_admin(request, month: int = None, year: int = None):
+    """
+    Admin-only: Get detailed daily attendance for ALL employees in their organization.
+    """
+    user = request.auth
+    if not user:
+        return 400, {"message": "User not authenticated"}
+
+    try:
+        today = date.today()
+        month = month or today.month
+        year = year or today.year
+
+        # ✅ Fetch logged-in user
+        user_obj = await UserProfile.objects.filter(id=user.id).afirst()
+        if not user_obj:
+            return 400, {"message": "User not found"}
+
+        # ✅ Only admins allowed
+        if user_obj.role != "admin":
+            return 400, {"message": "Only admins can view all employees' attendance"}
+
+        # ✅ Get organization
+        org = await sync_to_async(lambda: user_obj.organization)()
+        if not org:
+            return 400, {"message": "Organization not found"}
+
+        # ✅ Fetch employees in org
+        employees = await sync_to_async(list)(
+            Employee.objects.filter(user__organization=org)
+        )
+
+        employees_data = []
+
+        for emp in employees:
+            # Attendance records for this employee
+            records = await sync_to_async(list)(
+                AttendanceDailyRecord.objects.filter(
+                    employee=emp,
+                    date__year=year,
+                    date__month=month
+                ).prefetch_related("time_punches")
+            )
+
+            daily_attendance = []
+            for record in records:
+                punches = record.time_punches.all()
+
+                punches_data = [
+                    {
+                        "in_time": str(tp.in_time) if tp.in_time else None,
+                        "out_time": str(tp.out_time) if tp.out_time else None,
+                        "duration": str(tp.duration) if tp.duration else None,
+                    }
+                    for tp in punches
+                ]
+
+                # total time (HH:MM:SS style)
+                total_seconds = sum(tp.duration.total_seconds() for tp in punches if tp.duration)
+                hours = int(total_seconds // 3600)
+                minutes = int((total_seconds % 3600) // 60)
+                seconds = int(total_seconds % 60)
+                total_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+                daily_attendance.append({
+                    "date": str(record.date),
+                    "day_name": record.date.strftime("%A"),
+                    "punches": punches_data,
+                    "total_time": total_time,
+                    "status": record.status,
+                    "is_justified": record.is_justified,
+                })
+
+            employee_name = await sync_to_async(lambda: emp.user.get_full_name())()
+
+            employees_data.append({
+                "employee_id": emp.id,
+                "employee_name": employee_name,
+                "attendance": daily_attendance,
+            })
+
+        # ✅ Final response (matches MonthlyAttendanceResponse)
+        return 200, {
+            "organization": {
+                "id": org.id,
+                "name": org.organization_name,
+                "domain": org.domain,
+                "code": org.organisation_code,
+                "logo": org.logo.url if org.logo else None,
+                "timezone": org.timezone,
+                "address": org.address,
+            },
+            "month": month,
+            "year": year,
+            "employees": employees_data,
+        }
+
+    except Exception as e:
+        return 400, {"message": str(e)}

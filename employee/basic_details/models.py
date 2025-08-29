@@ -26,8 +26,7 @@ class Employee(models.Model):
     weekly_offs = models.JSONField(null=True)
     permissions = models.JSONField(null=True)
 
-    def __str__(self):
-        return f"{self.name} ({self.username})"
+    
 
 class PersonalDetail(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
